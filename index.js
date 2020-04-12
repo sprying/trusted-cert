@@ -419,6 +419,10 @@ const currentState = () => {
   console.log('更多使用帮助')
   console.log('$ self-signed --help')
   console.log('')
+  console.log('如何配置服务器的HTTPS')
+  console.log('https://yuque.antfin-inc.com/yingchun.fyc/kwg02h/ludtut#60d30e4c')
+
+  console.log('')
   console.log('如有疑问联系author@慧知')
 }
 

@@ -10,22 +10,22 @@ program
 
 program.on('--help', () => {
   console.log('')
-  console.log('首次使用先安装')
+  console.log('先安装，再使用其它命令')
   console.log('  $ self-signed install')
 })
+
+program
+  .command('install')
+  .description('生成ssl密钥和自签名证书，在系统钥匙串里添加和信任自签名证书')
+  .action(() => {
+    install()
+  })
 
 program
   .command('info', { isDefault: true })
   .description('查看自签名信息')
   .action(() => {
     currentState()
-  })
-
-program
-  .command('install')
-  .description('生成ssl密钥和自签名证书，并信任自签名证书')
-  .action(() => {
-    install()
   })
 
 program
@@ -37,14 +37,14 @@ program
 
 program
   .command('add <host>')
-  .description('添加要支持的域名')
+  .description('添加要支持的域名，支持以,分隔')
   .action((hosts) => {
     addHosts(hosts.split(',').map(host => host))
   })
 
 program
   .command('unInstall')
-  .description('卸载证书与删除信任')
+  .description('删除生成的ssl密钥和自签名证书')
   .action(() => {
     unInstall()
   })
