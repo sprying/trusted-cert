@@ -396,23 +396,25 @@ const currentState = () => {
     console.log('$ self-signed install')
     return
   }
-  console.log('创建的密钥文件路径是：', sslKeyPath)
-  console.log('创建的自签名证书文件路径是：', sslCrtPath)
-  console.log('证书的起止有效时间：')
+  console.log('密钥文件路径：', sslKeyPath)
+  console.log('自签名证书文件路径：', sslCrtPath)
+  console.log('自签名证书已经支持的域名：')
+  const crtHosts = getCrtHosts()
+  console.log(crtHosts.join(','))
+  console.log('自签名证书的有效时间：')
   console.log(`${execSync(`openssl x509 -in ${sslCrtPath} -noout -dates`, { encoding: 'utf-8' })}`.trim())
   if (isOSX) {
     const sha1List = getKeyChainCertSha1List()
     const sha1 = execSync(`openssl x509 -sha1 -in ${sslCrtPath} -noout -fingerprint`, { encoding: 'utf-8' }).split('=')[1].replace(/:/g, '').trim()
     if (sha1List.includes(sha1)) {
-      console.log(`自签名证书已经添加到钥匙串并被信任，名称是${CN}，sha-1是${sha1}`)
+      console.log('自签名证书已经添加到钥匙串并被始终信任')
+      console.log(`自签名证书在钥匙串里的名称：${CN}`)
+      console.log(`自签名证书在钥匙串里的sha-1：${sha1}`)
     } else {
-      console.log('自签名证书还没被添加到钥匙串，可以运行下面命令，会自动添加到钥匙串并会始终信任')
+      console.log('自签名证书还没被添加到钥匙串，可以运行下面命令，执行添加和始终信任')
       console.log('$ self-signed trust')
     }
   }
-  console.log('自签名证书已经支持的域名：')
-  const crtHosts = getCrtHosts()
-  console.log(crtHosts.join(','))
   console.log('')
   console.log('更多使用帮助')
   console.log('$ self-signed --help')
@@ -433,12 +435,15 @@ const trustSelfSigned = async () => {
   const sha1List = getKeyChainCertSha1List()
   const sha1 = execSync(`openssl x509 -sha1 -in ${sslCrtPath} -noout -fingerprint`, { encoding: 'utf-8' }).split('=')[1].replace(/:/g, '').trim()
   if (sha1List.includes(sha1)) {
-    console.log(`证书已经添加过，无须重复添加，在钥匙串里的名称是${CN}，sha-1是${sha1}`)
+    console.log('钥匙串里已经添加过，无须重复添加')
+    console.log('在钥匙串里证书的信息：')
+    console.log(`名称: ${CN}`)
+    console.log(`sha-1: ${sha1}`)
   } else {
     const added = await trustSelfSignedCert()
     if (added) {
     //   console.log(`已成功添加自签名，名称是${CN}，sha-1是${sha1}`)
-      console.log('添加并信任成功，钥匙串里名称为：', CN)
+      console.log(`添加并信任成功，钥匙串里名称是"${CN}"`)
     } else {
       console.log('添加失败')
     }
