@@ -12,5 +12,9 @@
   },
   "devDependencies": {
     "standard": "^14.3.3"
-  }
+  },
+  "files": [
+    "cli.js",
+    "index.js"
+  ]
 }
