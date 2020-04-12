@@ -5,12 +5,12 @@ const inquirer = require('inquirer')
 
 // 判断系统，暂时这样写，不确定准确性
 const isOSX = process.platform === 'darwin'
-const sslCertificateDir = `${process.env.HOME}/.ssl-cert`
+const sslCertificateDir = `${process.env.HOME}/.self-signed-cert`
 const sslConfigFile = `${sslCertificateDir}/ssl.cnf`
 const sslKeyPath = `${sslCertificateDir}/ssl.key`
 const sslCrtPath = `${sslCertificateDir}/ssl.crt`
 // 安装到系统上证书的名称
-const CN = 'genereted by ssl-cert-cli'
+const CN = 'genereted by create-self-signed'
 // const CN = 'genereted by ssl-cert-tool@yingchun.fyc'
 // const CN = 'self-signed-cert genereted by ssl-cert-tool@yingchun.fyc'
 // 自签名证书默认支持的域名
@@ -54,7 +54,7 @@ const questions = [
     type: 'input',
     name: 'domains',
     // message: 'Input the domain name to be self-signed. Separate multiple domain names with commas',
-    message: '输入启动本地HTTPS服务时使用的域名，多个以,分隔',
+    message: '输入启动本地HTTPS服务时使用的域名，多个以,分隔，直接回车将使用默认',
     default: DEFAULTDOMAINS.join(',')
   }]
 
@@ -231,7 +231,7 @@ const install = async () => {
     } else if (existCrtDir) {
       message = `继续操作会删除存放密钥和自签名证书文件的目录${sslCertificateDir}`
     }
-    message = '继续操作会覆盖该工具原先安装的证书'
+    message = '继续操作会覆盖该工具已创建的证书'
     const answer = await inquirer.prompt([{
       type: 'confirm',
       name: 'continue',
@@ -240,6 +240,7 @@ const install = async () => {
     }])
     // 取消卸载或卸载失败
     if (!(answer.continue && await unInstall())) return
+    if (!answer.continue) return
   }
   const options = await getInquirerAnswer()
   await createConfigFile(options)
@@ -261,6 +262,10 @@ const install = async () => {
       console.log('钥匙串添加证书失败')
     }
   }
+  console.log('安装结束')
+  console.log('')
+  console.log('可随时通过下面命令行查看自签名信息')
+  console.log('$ self-signed')
   console.log('')
   console.log('安装证书的结果：')
   currentState()
@@ -284,7 +289,7 @@ const getCrtHosts = () => {
  * 获取自己创建的证书密钥和自签名证书
  * @param {Array} param0
  */
-const obtainSelfSigned = async (hosts = []) => {
+const obtainSelfSigned = async (hosts = DEFAULTDOMAINS) => {
   const existSslKeyAndCrt = fs.existsSync(sslKeyPath) && fs.existsSync(sslCrtPath)
   let matched
   if (existSslKeyAndCrt) {
@@ -411,7 +416,8 @@ const currentState = () => {
   console.log('')
   console.log('更多使用帮助')
   console.log('$ self-signed --help')
-  console.log('Thx, self signed tool by 慧知')
+  console.log('')
+  console.log('如有疑问联系author@慧知')
 }
 
 /**

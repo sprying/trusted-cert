@@ -50,8 +50,8 @@ program
   })
 
 program
-  .command('api')
-  .description('卸载证书与删除信任')
+  .command('api', { noHelp: true })
+  .description('调用api的示例')
   .action(() => {
     obtainSelfSigned(['*.fa']).then(res => {
       console.log(res)
