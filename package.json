@@ -1,0 +1,16 @@
+{
+  "name": "self-signed",
+  "version": "0.0.1",
+  "bin": {
+    "self-signed": "./cli.js"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "commander": "^5.0.0",
+    "fs-extra": "^9.0.0",
+    "inquirer": "^7.1.0"
+  },
+  "devDependencies": {
+    "standard": "^14.3.3"
+  }
+}
