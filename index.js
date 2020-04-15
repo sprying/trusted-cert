@@ -12,7 +12,6 @@ const CN = 'genereted by trusted-cert'
 const DEFAULTDOMAINS = [
   'localhost',
   '*.taobao.com',
-  '*.alibaba-inc.com',
   '*.alimama.com',
   '*.tanx.com',
   '*.m.taobao.com'
@@ -330,11 +329,15 @@ const currentState = () => {
   console.log('更多使用帮助')
   console.log('$ trusted-cert --help')
   console.log('')
-  console.log('配置服务的HTTPS证书示例')
-  console.log('https://yuque.antfin-inc.com/yingchun.fyc/kwg02h/ludtut#60d30e4c')
+  console.log('配置webpack的HTTPS证书示例')
+  console.log('https://github.com/sprying/trusted-cert#webpack')
+  console.log('配置nginx的HTTPS证书示例')
+  console.log('https://github.com/sprying/trusted-cert#nginx')
+  console.log('配置nodejs的HTTPS证书示例')
+  console.log('https://github.com/sprying/trusted-cert#nodejs')
 
   console.log('')
-  console.log('如有疑问联系author@慧知')
+  console.log('如有疑问联系@慧知')
 }
 
 const trustSelfSigned = async () => {
