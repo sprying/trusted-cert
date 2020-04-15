@@ -13,6 +13,12 @@
   "devDependencies": {
     "standard": "^14.3.3"
   },
+  "author": "sprying",
+  "homepage": "https://github.com/sprying/trusted-cert",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sprying/trusted-cert"
+  },
   "files": [
     "cli.js",
     "index.js"
