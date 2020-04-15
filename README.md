@@ -1,19 +1,21 @@
-# create-self-signed
-
 ## 使用
 ### 命令行
 ```
-npm install create-self-signed -g
-self-signed --help
+npm install trusted-cert -g
+# 或者使用yarn
+yarn global add trusted-cert
+
+# 一键生成自签名证书并添加到macOS钥匙串
+trusted-cert install
 ```
 
 ### api调用
 ```
-npm install create-self-signed --save
+npm install trusted-cert --save
 ```
 ```
-const { obtainSelfSigned } = require('create-self-signed')
-const hosts = ['local.m.taobao.com'] // 本地https服务要使用的host
+const { obtainSelfSigned } = require('trusted-cert')
+const hosts = ['test.m.taobao.com'] // 本地https服务要使用的host
 obtainSelfSigned(hosts).then(result => {
     // result
     // {

@@ -3,17 +3,12 @@ const fse = require('fs-extra')
 const fs = require('fs')
 const inquirer = require('inquirer')
 
-// 判断系统，暂时这样写，不确定准确性
 const isOSX = process.platform === 'darwin'
 const sslCertificateDir = `${process.env.HOME}/.self-signed-cert`
 const sslConfigFile = `${sslCertificateDir}/ssl.cnf`
 const sslKeyPath = `${sslCertificateDir}/ssl.key`
 const sslCrtPath = `${sslCertificateDir}/ssl.crt`
-// 安装到系统上证书的名称
-const CN = 'genereted by create-self-signed'
-// const CN = 'genereted by ssl-cert-tool@yingchun.fyc'
-// const CN = 'self-signed-cert genereted by ssl-cert-tool@yingchun.fyc'
-// 自签名证书默认支持的域名
+const CN = 'genereted by trusted-cert'
 const DEFAULTDOMAINS = [
   'localhost',
   '*.taobao.com',
@@ -22,41 +17,12 @@ const DEFAULTDOMAINS = [
   '*.tanx.com',
   '*.m.taobao.com'
 ]
-const questions = [
-  /*
-{
-    type: 'input',
-    name: 'C',
-    message: 'Country Name (2 letter code) [CN]',
-    default: 'CN'
-}, {
-    type: 'input',
-    name: 'ST',
-    message: 'State or Province Name (full name) [ZheJiang]',
-    default: 'ZheJiang'
-}, {
-    type: 'input',
-    name: 'L',
-    message: 'Locality Name (eg, city) []',
-    default: 'HangZhou'
-}, {
-    type: 'input',
-    name: 'O',
-    message: 'Organization Name (eg, company) [Internet Widgits Pty Ltd]',
-    default: 'Alibaba'
-}, {
-    type: 'input',
-    name: 'OU',
-    message: 'Organizational Unit Name (eg, section) []',
-    default: 'AlimamaMUX'
-},
-*/{
-    type: 'input',
-    name: 'domains',
-    // message: 'Input the domain name to be self-signed. Separate multiple domain names with commas',
-    message: '输入启动本地HTTPS服务时使用的域名，多个以,分隔，直接回车将使用默认',
-    default: DEFAULTDOMAINS.join(',')
-  }]
+const questions = [{
+  type: 'input',
+  name: 'domains',
+  message: '输入启动本地HTTPS服务时使用的域名，多个以,分隔，直接回车将使用默认',
+  default: DEFAULTDOMAINS.join(',')
+}]
 
 const getInquirerAnswer = async () => {
   const answer = await inquirer.prompt(questions)
@@ -67,7 +33,6 @@ const getInquirerAnswer = async () => {
     domains = []
   }
   let allDomains = DEFAULTDOMAINS.concat(domains)
-  // 过滤重复的
   allDomains = allDomains.reduce((accumulator, currentValue) => {
     !accumulator.includes(currentValue) && accumulator.push(currentValue)
     return accumulator
@@ -109,19 +74,12 @@ IP.1 = 127.0.0.1
     `.trim())
 }
 
-/**
- * 通过命令行的交互方式收集配置信息，然后生成配置文件
- */
 const createConfigFile = async (options) => {
   await fse.ensureDir(sslCertificateDir)
   createCnfFile(options)
 }
 
-/**
- * 创建密钥和自签名证书
- */
 const createSSLKeyAndCrt = () => new Promise((resolve, reject) => {
-  // 通过 .cnf 生成 .key、.crt
   exec(`openssl req \
     -new \
     -newkey rsa:2048 \
@@ -133,8 +91,6 @@ const createSSLKeyAndCrt = () => new Promise((resolve, reject) => {
     -out ${sslCrtPath} \
     -config ${sslConfigFile}`, (error, stdout, stderr) => {
     if (error) {
-      // console.log('*error*')
-      // console.log(stderr)
       resolve({
         success: false
       })
@@ -148,9 +104,6 @@ const createSSLKeyAndCrt = () => new Promise((resolve, reject) => {
   })
 })
 
-/**
- * OSX 在系统钥匙串里添加并始终信任自签名证书
- */
 const trustSelfSignedCert = () => new Promise((resolve, reject) => {
   exec(`sudo security add-trusted-cert \
     -d -r trustRoot \
@@ -164,9 +117,6 @@ const trustSelfSignedCert = () => new Promise((resolve, reject) => {
   })
 })
 
-/**
- * 获取该工具添加到钥匙串里自签名证书列表，返回的是证书的sha-1列表
- */
 const getKeyChainCertSha1List = () => {
   let sha1List
   if (isOSX) {
@@ -174,7 +124,6 @@ const getKeyChainCertSha1List = () => {
       const sha1Str = isOSX && execSync(`security find-certificate -a -c '${CN}' -Z | grep ^SHA-1`, { encoding: 'utf-8' })
       sha1List = sha1Str.replace(/SHA-1\shash:\s/g, '').split('\n').filter(sha1 => sha1)
     } catch (error) {
-      // 找不到
       sha1List = []
     }
   } else {
@@ -183,21 +132,16 @@ const getKeyChainCertSha1List = () => {
   return sha1List
 }
 
-/**
- * 卸载证书与删除信任
- */
 const unInstall = async () => {
   const sha1List = getKeyChainCertSha1List()
   const existCrtDir = fs.existsSync(sslCertificateDir)
   if (!sha1List.length && !existCrtDir) {
     console.log('没有找到该工具安装的证书')
-    // console.log('没有找到该工具创建的自签名证书，钥匙串里也没找到该工具添加的证书')
     return true
   }
 
-  // const sha1 = execSync(`child.execSync('openssl x509 -sha1 -in ${sslCrtPath} -noout -fingerprint',{encoding: 'utf-8'}).split('=')[1].replace(/:/g, '').trim()`, {encoding: 'utf-8'})
   if (sha1List.length) {
-    console.log(`正在删除钥匙串里名称是${CN}的证书`)
+    console.log(`正在删除钥匙串里名称「${CN}」的证书`)
     try {
       sha1List.forEach(sha1 => {
         execSync(`sudo security delete-certificate -Z ${sha1}`)
@@ -216,9 +160,6 @@ const unInstall = async () => {
   return true
 }
 
-/**
- * 创建自签名证书并信任
- */
 const install = async () => {
   const sha1List = getKeyChainCertSha1List()
   const existCrtDir = fs.existsSync(sslCertificateDir)
@@ -238,7 +179,6 @@ const install = async () => {
       message,
       default: false
     }])
-    // 取消卸载或卸载失败
     if (!(answer.continue && await unInstall())) return
     if (!answer.continue) return
   }
@@ -246,13 +186,9 @@ const install = async () => {
   await createConfigFile(options)
   const result = await createSSLKeyAndCrt()
   if (result.success) {
-    // console.log('generate ssl certificate successfully ^.^')
     console.log('成功创建密钥和自签名证书')
-    // console.log('private key: ', sslKeyPath)
-    // console.log('certificate: ', sslCrtPath)
   }
 
-  // console.log('try add trust to system.keychain, need you permission')
   if (isOSX) {
     console.log('向系统的钥匙串里添加证书并始终信任...')
     const isTrustCert = await trustSelfSignedCert()
@@ -265,38 +201,28 @@ const install = async () => {
   console.log('安装结束')
   console.log('')
   console.log('可随时通过下面命令行查看自签名信息')
-  console.log('$ self-signed')
+  console.log('$ trusted-cert')
   console.log('')
   console.log('安装证书的结果：')
   currentState()
 }
 
-/**
- * 获取自签名证书里支持的域名
- */
 const getCrtHosts = () => {
   let hosts
   try {
     hosts = execSync(`openssl x509 -in ${sslCrtPath} -noout -text | grep DNS`, { encoding: 'utf-8' }).trim().split(',').filter(item => item.includes('DNS:')).map(item => item.trim().replace(/DNS:/, ''))
   } catch (error) {
-    // return false
     return []
   }
   return hosts
 }
 
-/**
- * 获取自己创建的证书密钥和自签名证书
- * @param {Array} param0
- */
 const obtainSelfSigned = async (hosts = DEFAULTDOMAINS) => {
   const existSslKeyAndCrt = fs.existsSync(sslKeyPath) && fs.existsSync(sslCrtPath)
   let matched
   if (existSslKeyAndCrt) {
     const crtHosts = getCrtHosts()
     matched = hosts.every(host => {
-      // m.tanx.com 能匹配上 *.tanx.com
-      // (new RegExp('*.tanx.com'.replace('*','^[^.]+'))).test('m.tanx.com') // true
       return crtHosts.find(crtHostItem => {
         if (crtHostItem.includes('*')) {
           return (new RegExp(crtHostItem.replace('*', '^[^.]+'))).test(host)
@@ -334,22 +260,12 @@ const obtainSelfSigned = async (hosts = DEFAULTDOMAINS) => {
       certTrusted
     }
   } else if (existSslKeyAndCrt) {
-    // console.log('已有的自签名证书里没有你需要的域名')
-    // const answer = await inquirer.prompt([{
-    //     type: 'confirm',
-    //     name: 'continue',
-    //     message: '是否更新自签名证书，新增要支持的域名',
-    //     default: false
-    // }])
     if (isOSX) {
       const sha1List = getKeyChainCertSha1List()
-      // todo 要加sha-1比对才准确
       if (sha1List.length) {
-        // console.log('自签名证书要新增支持的域名，正在更新自签名证书，需要重新信任')
         console.log('新增域名需要更新证书并重新信任')
       } else {
         console.log('新增域名需要更新证书')
-        // console.log('自签名证书要新增支持的域名，正在更新自签名证书')
       }
       try {
         sha1List.forEach(sha1 => {
@@ -359,8 +275,6 @@ const obtainSelfSigned = async (hosts = DEFAULTDOMAINS) => {
         return {
           success: false,
           message: '卸载老的证书失败，请授权重试'
-          // sslKeyPath,
-          // sslCrtPath,
         }
       }
     } else {
@@ -386,14 +300,11 @@ const obtainSelfSigned = async (hosts = DEFAULTDOMAINS) => {
   }
 }
 
-/**
- * 自签名信息
- */
 const currentState = () => {
   const existSslKeyAndCrt = fs.existsSync(sslKeyPath) && fs.existsSync(sslCrtPath)
   if (!existSslKeyAndCrt) {
     console.log('还没有安装自签名证书，运行下面命令安装使用')
-    console.log('$ self-signed install')
+    console.log('$ trusted-cert install')
     return
   }
   console.log('密钥文件路径：', sslKeyPath)
@@ -412,28 +323,25 @@ const currentState = () => {
       console.log(`自签名证书在钥匙串里的sha-1：${sha1}`)
     } else {
       console.log('自签名证书还没被添加到钥匙串，可以运行下面命令，执行添加和始终信任')
-      console.log('$ self-signed trust')
+      console.log('$ trusted-cert trust')
     }
   }
   console.log('')
   console.log('更多使用帮助')
-  console.log('$ self-signed --help')
+  console.log('$ trusted-cert --help')
   console.log('')
-  console.log('如何配置服务器的HTTPS')
+  console.log('配置服务的HTTPS证书示例')
   console.log('https://yuque.antfin-inc.com/yingchun.fyc/kwg02h/ludtut#60d30e4c')
 
   console.log('')
   console.log('如有疑问联系author@慧知')
 }
 
-/**
- * 信任自签名证书
- */
 const trustSelfSigned = async () => {
   const existSslKeyAndCrt = fs.existsSync(sslKeyPath) && fs.existsSync(sslCrtPath)
   if (!existSslKeyAndCrt) {
     console.log('还没有安装自签名证书，运行下面命令安装使用')
-    console.log('$ self-signed install')
+    console.log('$ trusted-cert install')
     return
   }
   const sha1List = getKeyChainCertSha1List()
@@ -454,10 +362,6 @@ const trustSelfSigned = async () => {
   }
 }
 
-/**
- * 添加新的要支持的域名
- * @param {*} hosts
- */
 const addHosts = async (hosts = []) => {
   if (!hosts.length) {
     console.log('输入要支持的host')
@@ -466,7 +370,7 @@ const addHosts = async (hosts = []) => {
   const existSslKeyAndCrt = fs.existsSync(sslKeyPath) && fs.existsSync(sslCrtPath)
   if (!existSslKeyAndCrt) {
     console.log('还没有安装自签名证书，运行下面命令安装使用')
-    console.log('$ self-signed install')
+    console.log('$ trusted-cert install')
     return
   }
 
@@ -502,7 +406,6 @@ const addHosts = async (hosts = []) => {
   let sha1List
   if (isOSX) {
     sha1List = getKeyChainCertSha1List()
-    // todo 要加sha-1比对才准确
     if (sha1List.length) {
       console.log('新增域名需要更新证书并重新信任')
     } else {
@@ -538,13 +441,8 @@ const addHosts = async (hosts = []) => {
   }
 }
 
-const removeSelfSigned = () => {
-
-}
-
 module.exports = {
   obtainSelfSigned,
-  removeSelfSigned,
   currentState,
   install,
   unInstall,

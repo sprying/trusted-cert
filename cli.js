@@ -4,14 +4,14 @@ const pkg = require('./package.json')
 const { install, unInstall, currentState, trustSelfSigned, addHosts, obtainSelfSigned } = require('./index')
 
 program
-  .name('self-signed')
+  .name('trusted-cert')
   .usage('[global options] command')
   .version(pkg.version, '-v, --version', '当前版本')
 
 program.on('--help', () => {
   console.log('')
   console.log('先安装，再使用其它命令')
-  console.log('  $ self-signed install')
+  console.log('  $ trusted-cert install')
 })
 
 program

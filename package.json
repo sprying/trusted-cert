@@ -1,11 +1,8 @@
 {
-  "name": "create-self-signed",
+  "name": "trusted-cert",
   "version": "0.0.1-3",
   "bin": {
-    "create-trusted-cert": "./cli.js",
-    "create-self-signed": "./cli.js",
-    "add-self-signed": "./cli.js",
-    "self-signed": "./cli.js"
+    "trusted-cert": "./cli.js"
   },
   "main": "index.js",
   "dependencies": {
