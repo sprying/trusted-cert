@@ -134,6 +134,19 @@ Commands:
 
 
 # 附配置服务的HTTPS证书示例
+## webpack
+```javascript
+// ...
+devServer: {
+    https: {
+      key: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.key')),
+      cert: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.crt')),
+    },
+  },
+},
+// ...
+```
+
 ## nginx
 ```nginx
 # ...
@@ -152,15 +165,20 @@ server {
 # ...
 ```
 
-## webpack
+
+## nodejs
 ```javascript
-// ...
-devServer: {
-    https: {
-      key: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.key')),
-      cert: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.crt')),
-    },
-  },
-},
-// ...
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+
+const options = {
+  key: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.key')),
+  cert: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.crt')),
+};
+
+https.createServer(options, (req, res) => {
+  res.writeHead(200);
+  res.end('hello world\n');
+}).listen(8000);
 ```
