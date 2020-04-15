@@ -1,5 +1,5 @@
 {
-  "name": "create-self-signed",
+  "name": "trusted-cert",
   "version": "0.0.1-5",
   "bin": {
     "trusted-cert": "./cli.js"
