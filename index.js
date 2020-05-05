@@ -1,3 +1,5 @@
+import { rmCertDir } from './lib'
+
 const { exec, execSync } = require('child_process')
 const fse = require('fs-extra')
 const fs = require('fs')
@@ -61,6 +63,7 @@ CN=${CN}
 emailAddress=yingchun.fyc@alibaba-inc.com
 
 [v3_req]
+basicConstraints=critical, CA:TRUE
 keyUsage=nonRepudiation, digitalSignature, keyEncipherment
 extendedKeyUsage=serverAuth
 subjectAltName=@alt_names
@@ -152,7 +155,12 @@ const unInstall = async () => {
     console.log('删除成功')
   }
   if (existCrtDir) {
-    execSync(`rm -rf ${sslCertificateDir}`)
+    try {
+      await rmCertDir(sslCertificateDir)
+    } catch (e) {
+      console.log('删除存放原证书的目录失败，流程结束')
+      return false
+    }
     console.log(`已经删除存放密钥和证书的目录${sslCertificateDir}`)
   }
   console.log('删除完成')
@@ -279,7 +287,14 @@ const obtainSelfSigned = async (hosts = DEFAULTDOMAINS) => {
     } else {
       console.log('自签名证书要新增支持的域名，正在更新自签名证书')
     }
-    execSync(`rm -rf ${sslCertificateDir}`)
+    try {
+      await rmCertDir(sslCertificateDir)
+    } catch (e) {
+      return {
+        success: false,
+        message: '删除存放原证书的目录失败，请授权重试'
+      }
+    }
   }
 
   await createConfigFile({ hosts })
@@ -392,7 +407,6 @@ const addHosts = async (hosts = []) => {
     return
   }
   if (!matched) {
-    console.log(crtHosts)
     const addedHosts = hosts.filter(host => {
       return !crtHosts.find(crtHostItem => {
         if (crtHostItem.includes('*')) {
@@ -402,7 +416,6 @@ const addHosts = async (hosts = []) => {
         }
       })
     })
-    console.log(addedHosts)
     hosts = crtHosts.concat(addedHosts)
   }
 
@@ -425,7 +438,12 @@ const addHosts = async (hosts = []) => {
   } else {
     console.log('正在更新证书')
   }
-  execSync(`rm -rf ${sslCertificateDir}`)
+  try {
+    await rmCertDir(sslCertificateDir)
+  } catch (e) {
+    console.log('新增域名失败')
+    return
+  }
 
   await createConfigFile({ hosts })
 

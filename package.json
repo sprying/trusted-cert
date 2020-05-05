@@ -1,7 +1,7 @@
 {
   "name": "trusted-cert",
   "version": "0.0.2",
-  "description": "A simple library to generate self signed x509 certs",
+  "description": "A simple tool to generate self signed x509 certificate",
   "bin": {
     "trusted-cert": "./cli.js"
   },
@@ -15,7 +15,7 @@
     "standard": "^14.3.3"
   },
   "author": "sprying<sprying.fang@qq.com>",
-  "homepage": "https://github.com/sprying/trusted-cert",
+  "homepage": "https://github.com/sprying/trusted-cert/README.md",
   "repository": {
     "type": "git",
     "url": "https://github.com/sprying/trusted-cert"
@@ -25,8 +25,17 @@
   },
   "keywords": [
     "x509",
+    "certificate",
     "certificates",
-    "self-signed"
+    "self-signed",
+    "self-signing",
+    "credential",
+    "credentials",
+    "keychain",
+    "ssl",
+    "openssl",
+    "trust store",
+    "ca"
   ],
   "files": [
     "cli.js",
