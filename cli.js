@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const { program } = require('commander')
 const pkg = require('./package.json')
-const { install, unInstall, currentState, trustSelfSigned, addHosts, obtainSelfSigned } = require('./index')
+const { install, uninstall, info, doTrust, addHosts, obtainSelfSigned } = require('./index')
 
 program
   .name('trusted-cert')
@@ -25,14 +25,14 @@ program
   .command('info', { isDefault: true })
   .description('查看自签名信息')
   .action(() => {
-    currentState()
+    info()
   })
 
 program
   .command('trust')
   .description('信任自签名证书')
   .action(() => {
-    trustSelfSigned()
+    doTrust()
   })
 
 program
@@ -43,10 +43,10 @@ program
   })
 
 program
-  .command('unInstall')
+  .command('uninstall')
   .description('删除生成的ssl密钥和自签名证书')
   .action(() => {
-    unInstall()
+    uninstall()
   })
 
 program

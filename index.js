@@ -1,472 +1,294 @@
-import { rmCertDir } from './lib'
-
-const { exec, execSync } = require('child_process')
-const fse = require('fs-extra')
 const fs = require('fs')
 const inquirer = require('inquirer')
-
+const { setConfig, getConfig } = require('./lib/configuration')
 const isOSX = process.platform === 'darwin'
-const sslCertificateDir = `${process.env.HOME}/.self-signed-cert`
-const sslConfigFile = `${sslCertificateDir}/ssl.cnf`
-const sslKeyPath = `${sslCertificateDir}/ssl.key`
-const sslCrtPath = `${sslCertificateDir}/ssl.crt`
-const CN = 'genereted by trusted-cert'
-const DEFAULTDOMAINS = [
-  'localhost',
-  '*.taobao.com',
-  '*.alimama.com',
-  '*.tanx.com',
-  '*.m.taobao.com'
-]
-const questions = [{
-  type: 'input',
-  name: 'domains',
-  message: '输入启动本地HTTPS服务时使用的域名，多个以,分隔，直接回车将使用默认',
-  default: DEFAULTDOMAINS.join(',')
-}]
+const {
+  hasExistedKeyAndCert,
+  getCrtHosts,
+  getKeyChainCertSha1List,
+  rmKeyChainCertsBySha1List,
+  createConfigFile,
+  createSSLKeyAndCrt,
+  addToKeyChain,
+  getCertValidPeriod,
+  getCertSha1,
+  isCertTrusted,
+  rmDir
+} = require('./lib/lib')
+const { isMatched, getAdded } = require('./lib/util')
+const { mergeLan, getLan } = require('./lib/lan')
 
+const { sslCertificateDir, sslKeyPath, sslCrtPath, CN, DEFAULTDOMAINS } = getConfig()
+const lan = getLan()
+
+/**
+ * 判断没安装过证书给提示
+ * @returns {boolean}
+ */
+const judgeExistOnConsole = () => {
+  if (!hasExistedKeyAndCert()) {
+    console.warn(lan.host_add_no_install || '还没有安装自签名证书，运行下面命令安装使用')
+    console.warn(lan.host_add_no_install_operation_tip || '$ trusted-cert install')
+    return false
+  }
+  return true
+}
+
+/**
+ * cli交互方式获取支持的域名
+ * @returns {Array}
+ */
 const getInquirerAnswer = async () => {
-  const answer = await inquirer.prompt(questions)
-  let { domains } = answer
+  const questions = [{
+    type: 'input',
+    name: 'domains',
+    message: DEFAULTDOMAINS.length ? lan.install_inquirer_domains_with_default : lan.install_inquirer_domains,
+    default: DEFAULTDOMAINS.join(',')
+  }]
+  let { domains } = await inquirer.prompt(questions)
   if (domains) {
     domains = domains.split(',').map(item => item.trim())
   } else {
-    domains = []
+    return []
   }
-  let allDomains = DEFAULTDOMAINS.concat(domains)
-  allDomains = allDomains.reduce((accumulator, currentValue) => {
+  domains = domains.reduce((accumulator, currentValue) => {
     !accumulator.includes(currentValue) && accumulator.push(currentValue)
     return accumulator
   }, [])
-  return {
-    ...answer,
-    hosts: allDomains
-  }
-}
-
-const createCnfFile = ({ hosts }) => {
-  fs.writeFileSync(sslConfigFile, `
-[req] 
-prompt = no 
-default_bits = 4096
-default_md = sha256
-distinguished_name = dn 
-x509_extensions = v3_req
-
-[dn] 
-C=CN
-ST=ZheJiang
-L=HangZhou
-O=Alibaba
-OU=AlimamaMux
-CN=${CN}
-emailAddress=yingchun.fyc@alibaba-inc.com
-
-[v3_req]
-basicConstraints=critical, CA:TRUE
-keyUsage=nonRepudiation, digitalSignature, keyEncipherment
-extendedKeyUsage=serverAuth
-subjectAltName=@alt_names
-
-[alt_names]
-${hosts.map((item, index) => {
-    return `DNS.${index + 1} = ${item}`
-}).join('\n')}
-IP.1 = 127.0.0.1
-    `.trim())
-}
-
-const createConfigFile = async (options) => {
-  await fse.ensureDir(sslCertificateDir)
-  createCnfFile(options)
-}
-
-const createSSLKeyAndCrt = () => new Promise((resolve, reject) => {
-  exec(`openssl req \
-    -new \
-    -newkey rsa:2048 \
-    -sha1 \
-    -days 3650 \
-    -nodes \
-    -x509 \
-    -keyout ${sslKeyPath} \
-    -out ${sslCrtPath} \
-    -config ${sslConfigFile}`, (error, stdout, stderr) => {
-    if (error) {
-      resolve({
-        success: false
-      })
-      return
-    }
-    resolve({
-      success: true,
-      sslKeyPath,
-      sslCrtPath
-    })
-  })
-})
-
-const trustSelfSignedCert = () => new Promise((resolve, reject) => {
-  exec(`sudo security add-trusted-cert \
-    -d -r trustRoot \
-    -k /Library/Keychains/System.keychain \
-    ${sslCrtPath}`, (error, stdout, stderr) => {
-    if (error) {
-      resolve(false)
-      return
-    }
-    resolve(true)
-  })
-})
-
-const getKeyChainCertSha1List = () => {
-  let sha1List
-  if (isOSX) {
-    try {
-      const sha1Str = isOSX && execSync(`security find-certificate -a -c '${CN}' -Z | grep ^SHA-1`, { encoding: 'utf-8' })
-      sha1List = sha1Str.replace(/SHA-1\shash:\s/g, '').split('\n').filter(sha1 => sha1)
-    } catch (error) {
-      sha1List = []
-    }
-  } else {
-    sha1List = []
-  }
-  return sha1List
-}
-
-const unInstall = async () => {
-  const sha1List = getKeyChainCertSha1List()
-  const existCrtDir = fs.existsSync(sslCertificateDir)
-  if (!sha1List.length && !existCrtDir) {
-    console.log('没有找到该工具安装的证书')
-    return true
-  }
-
-  if (sha1List.length) {
-    console.log(`正在删除钥匙串里名称「${CN}」的证书`)
-    try {
-      sha1List.forEach(sha1 => {
-        execSync(`sudo security delete-certificate -Z ${sha1}`)
-      })
-    } catch (error) {
-      console.log('删除失败，流程结束')
-      return false
-    }
-    console.log('删除成功')
-  }
-  if (existCrtDir) {
-    try {
-      await rmCertDir(sslCertificateDir)
-    } catch (e) {
-      console.log('删除存放原证书的目录失败，流程结束')
-      return false
-    }
-    console.log(`已经删除存放密钥和证书的目录${sslCertificateDir}`)
-  }
-  console.log('删除完成')
-  return true
+  return domains
 }
 
 const install = async () => {
   const sha1List = getKeyChainCertSha1List()
   const existCrtDir = fs.existsSync(sslCertificateDir)
   if (sha1List.length || existCrtDir) {
-    let message
-    if (sha1List.length && existCrtDir) {
-      message = `继续操作会删除钥匙串里名称是${CN}的证书和存放密钥和自签名证书的目录${sslCertificateDir}`
-    } else if (sha1List.length) {
-      message = `继续操作会删除钥匙串里名称是${CN}的证书`
-    } else if (existCrtDir) {
-      message = `继续操作会删除存放密钥和自签名证书文件的目录${sslCertificateDir}`
-    }
-    message = '继续操作会覆盖该工具已创建的证书'
+    const message = lan.install_has_installed_delete_tip || '继续操作会覆盖该工具已创建的证书'
     const answer = await inquirer.prompt([{
       type: 'confirm',
       name: 'continue',
       message,
       default: false
     }])
-    if (!(answer.continue && await unInstall())) return
+    if (!(answer.continue && await uninstall())) return
     if (!answer.continue) return
+    console.log(lan.install_del_installed_process_creating || '正在创建证书...')
   }
-  const options = await getInquirerAnswer()
-  await createConfigFile(options)
-  const result = await createSSLKeyAndCrt()
-  if (result.success) {
-    console.log('成功创建密钥和自签名证书')
-  }
+  const domains = await getInquirerAnswer()
+  await createConfigFile(domains)
+  await createSSLKeyAndCrt()
+  console.log(lan.install_create_key_cert_file_success || '成功创建密钥和自签名证书')
 
   if (isOSX) {
-    console.log('向系统的钥匙串里添加证书并始终信任...')
-    const isTrustCert = await trustSelfSignedCert()
-    if (isTrustCert) {
-      console.log('添加并信任成功，钥匙串里名称为：', CN)
-    } else {
-      console.log('钥匙串添加证书失败')
-    }
-  }
-  console.log('安装结束')
-  console.log('')
-  console.log('可随时通过下面命令行查看自签名信息')
-  console.log('$ trusted-cert')
-  console.log('')
-  console.log('安装证书的结果：')
-  currentState()
-}
-
-const getCrtHosts = () => {
-  let hosts
-  try {
-    hosts = execSync(`openssl x509 -in ${sslCrtPath} -noout -text | grep DNS`, { encoding: 'utf-8' }).trim().split(',').filter(item => item.includes('DNS:')).map(item => item.trim().replace(/DNS:/, ''))
-  } catch (error) {
-    return []
-  }
-  return hosts
-}
-
-const obtainSelfSigned = async (hosts = DEFAULTDOMAINS) => {
-  const existSslKeyAndCrt = fs.existsSync(sslKeyPath) && fs.existsSync(sslCrtPath)
-  let matched
-  if (existSslKeyAndCrt) {
-    const crtHosts = getCrtHosts()
-    matched = hosts.every(host => {
-      return crtHosts.find(crtHostItem => {
-        if (crtHostItem.includes('*')) {
-          return (new RegExp(crtHostItem.replace('*', '^[^.]+'))).test(host)
-        } else {
-          return crtHostItem === host
-        }
-      })
-    })
-    if (!matched) {
-      const addedHosts = hosts.filter(host => {
-        return !crtHosts.find(crtHostItem => {
-          if (crtHostItem.includes('*')) {
-            return (new RegExp(crtHostItem.replace('*', '^[^.]+'))).test(host)
-          } else {
-            return crtHostItem === host
-          }
-        })
-      })
-      hosts = crtHosts.concat(addedHosts)
-    }
-  }
-  if (existSslKeyAndCrt && matched) {
-    const sha1List = getKeyChainCertSha1List()
-    const sha1 = execSync(`openssl x509 -sha1 -in ${sslCrtPath} -noout -fingerprint`, { encoding: 'utf-8' }).split('=')[1].replace(/:/g, '').trim()
-    let certTrusted
-    if (sha1List.includes(sha1)) {
-      certTrusted = true
-    } else if (isOSX) {
-      certTrusted = await trustSelfSignedCert()
-    }
-    return {
-      success: true,
-      sslKeyPath,
-      sslCrtPath,
-      certTrusted
-    }
-  } else if (existSslKeyAndCrt) {
-    if (isOSX) {
-      const sha1List = getKeyChainCertSha1List()
-      if (sha1List.length) {
-        console.log('新增域名需要更新证书并重新信任')
-      } else {
-        console.log('新增域名需要更新证书')
-      }
-      try {
-        sha1List.forEach(sha1 => {
-          execSync(`sudo security delete-certificate -Z ${sha1}`)
-        })
-      } catch (error) {
-        return {
-          success: false,
-          message: '卸载老的证书失败，请授权重试'
-        }
-      }
-    } else {
-      console.log('自签名证书要新增支持的域名，正在更新自签名证书')
-    }
+    console.log(lan.install_add_keychain_process_tip || '向系统的钥匙串里添加证书并始终信任...')
     try {
-      await rmCertDir(sslCertificateDir)
+      await addToKeyChain()
+      console.log(lan.install_add_keychain_success || '添加并信任成功，钥匙串里名称为：', CN)
     } catch (e) {
-      return {
-        success: false,
-        message: '删除存放原证书的目录失败，请授权重试'
-      }
+      console.warn(lan.install_add_keychain_failure || '钥匙串添加证书失败')
     }
   }
-
-  await createConfigFile({ hosts })
-
-  const result = await createSSLKeyAndCrt()
-  if (result.success) {
-    let certTrusted = false
-    if (isOSX) {
-      certTrusted = await trustSelfSignedCert()
-    }
-    return {
-      success: true,
-      sslKeyPath,
-      sslCrtPath,
-      certTrusted
-    }
-  }
+  console.log(lan.install_over || '安装结束')
+  lan.install_over_extra_info.forEach(text => {
+    console.log(text)
+  })
+  info()
 }
 
-const currentState = () => {
-  const existSslKeyAndCrt = fs.existsSync(sslKeyPath) && fs.existsSync(sslCrtPath)
-  if (!existSslKeyAndCrt) {
-    console.log('还没有安装自签名证书，运行下面命令安装使用')
-    console.log('$ trusted-cert install')
-    return
-  }
-  console.log('密钥文件路径：', sslKeyPath)
-  console.log('自签名证书文件路径：', sslCrtPath)
-  console.log('自签名证书已经支持的域名：')
-  const crtHosts = getCrtHosts()
-  console.log(crtHosts.join(','))
-  console.log('自签名证书的有效时间：')
-  console.log(`${execSync(`openssl x509 -in ${sslCrtPath} -noout -dates`, { encoding: 'utf-8' })}`.trim())
-  if (isOSX) {
-    const sha1List = getKeyChainCertSha1List()
-    const sha1 = execSync(`openssl x509 -sha1 -in ${sslCrtPath} -noout -fingerprint`, { encoding: 'utf-8' }).split('=')[1].replace(/:/g, '').trim()
-    if (sha1List.includes(sha1)) {
-      console.log('自签名证书已经添加到钥匙串并被始终信任')
-      console.log(`自签名证书在钥匙串里的名称：${CN}`)
-      console.log(`自签名证书在钥匙串里的sha-1：${sha1}`)
-    } else {
-      console.log('自签名证书还没被添加到钥匙串，可以运行下面命令，执行添加和始终信任')
-      console.log('$ trusted-cert trust')
-    }
-  }
-  console.log('')
-  console.log('更多使用帮助')
-  console.log('$ trusted-cert --help')
-  console.log('')
-  console.log('配置webpack的HTTPS证书示例')
-  console.log('https://github.com/sprying/trusted-cert#webpack')
-  console.log('配置nginx的HTTPS证书示例')
-  console.log('https://github.com/sprying/trusted-cert#nginx')
-  console.log('配置nodejs的HTTPS证书示例')
-  console.log('https://github.com/sprying/trusted-cert#nodejs')
-
-  console.log('')
-  console.log('如有疑问联系@慧知')
-}
-
-const trustSelfSigned = async () => {
-  const existSslKeyAndCrt = fs.existsSync(sslKeyPath) && fs.existsSync(sslCrtPath)
-  if (!existSslKeyAndCrt) {
-    console.log('还没有安装自签名证书，运行下面命令安装使用')
-    console.log('$ trusted-cert install')
-    return
-  }
+const uninstall = async () => {
   const sha1List = getKeyChainCertSha1List()
-  const sha1 = execSync(`openssl x509 -sha1 -in ${sslCrtPath} -noout -fingerprint`, { encoding: 'utf-8' }).split('=')[1].replace(/:/g, '').trim()
+  const existCrtDir = fs.existsSync(sslCertificateDir)
+  if (!sha1List.length && !existCrtDir) {
+    console.warn(lan.uninstall_unfound || '没有找到该工具安装的证书')
+    return true
+  }
+
+  if (sha1List.length) {
+    console.log(lan.uninstall_del_keychain || '正在删除钥匙串里名称「%s」的证书', CN)
+    try {
+      await rmKeyChainCertsBySha1List(sha1List)
+      console.log(lan.uninstall_del_keychain_success || '删除成功')
+    } catch (error) {
+      console.error(lan.uninstall_del_keychain_failure || '删除失败，流程结束')
+      return false
+    }
+  }
+  if (existCrtDir) {
+    try {
+      await rmDir(sslCertificateDir)
+      console.log(lan.uninstall_rm_dir_success || '已经删除存放密钥和证书的目录%s', sslCertificateDir)
+    } catch (e) {
+      console.log(lan.uninstall_rm_dir_failure || '删除存放原证书的目录失败，流程结束')
+      return false
+    }
+  }
+  console.log(lan.uninstall_complete || '删除完成')
+  return true
+}
+
+const doTrust = async () => {
+  if (!judgeExistOnConsole()) return
+
+  if (!isOSX) {
+    console.warn(lan.add_trust_only_support_osx || '目前仅支持OSX系统')
+    return
+  }
+
+  const sha1List = getKeyChainCertSha1List()
+  const sha1 = getCertSha1()
   if (sha1List.includes(sha1)) {
-    console.log('钥匙串里已经添加过，无须重复添加')
-    console.log('在钥匙串里证书的信息：')
-    console.log(`名称: ${CN}`)
-    console.log(`sha-1: ${sha1}`)
+    console.log(lan.add_trust_repeat_add_tip || '钥匙串里已经添加过，无须重复添加')
+    console.log(lan.add_trust_keychain_cert_info || '在钥匙串里证书的信息：')
+    console.log(lan.add_trust_keychain_cert_name || '名称: ', CN)
+    console.log(lan.add_trust_keychain_cert_sha1 || 'sha-1: ', sha1)
   } else {
-    const added = await trustSelfSignedCert()
-    if (added) {
-    //   console.log(`已成功添加自签名，名称是${CN}，sha-1是${sha1}`)
-      console.log(`添加并信任成功，钥匙串里名称是"${CN}"`)
-    } else {
-      console.log('添加失败')
+    try {
+      await addToKeyChain()
+      console.log(lan.add_trust_keychain_cert_success || '添加并信任成功，钥匙串里名称是：', CN)
+    } catch (e) {
+      console.error(lan.add_trust_failure || '添加失败')
     }
   }
 }
 
 const addHosts = async (hosts = []) => {
   if (!hosts.length) {
-    console.log('输入要支持的host')
+    console.warn(lan.host_add_no_input || '输入要支持的host')
     return
   }
-  const existSslKeyAndCrt = fs.existsSync(sslKeyPath) && fs.existsSync(sslCrtPath)
-  if (!existSslKeyAndCrt) {
-    console.log('还没有安装自签名证书，运行下面命令安装使用')
-    console.log('$ trusted-cert install')
-    return
-  }
+  if (!judgeExistOnConsole()) return
 
   const crtHosts = getCrtHosts()
-  const matched = hosts.every(host => {
-    return crtHosts.find(crtHostItem => {
-      if (crtHostItem.includes('*')) {
-        return (new RegExp(crtHostItem.replace('*', '^[^.]+'))).test(host)
-      } else {
-        return crtHostItem === host
-      }
-    })
-  })
+  const matched = isMatched(crtHosts, hosts)
   if (matched) {
-    console.log('证书已经支持该域名，无须添加了')
+    console.warn(lan.host_add_has_supported_no_needed_added || '证书已经支持该域名，无须添加了')
     return
   }
   if (!matched) {
-    const addedHosts = hosts.filter(host => {
-      return !crtHosts.find(crtHostItem => {
-        if (crtHostItem.includes('*')) {
-          return (new RegExp(crtHostItem.replace('*', '^[^.]+'))).test(host)
-        } else {
-          return crtHostItem === host
-        }
-      })
-    })
+    const addedHosts = getAdded(crtHosts, hosts)
     hosts = crtHosts.concat(addedHosts)
   }
 
-  let sha1List
-  if (isOSX) {
-    sha1List = getKeyChainCertSha1List()
-    if (sha1List.length) {
-      console.log('新增域名需要更新证书并重新信任')
-    } else {
-      console.log('正在更新证书')
-    }
-    try {
-      sha1List.forEach(sha1 => {
-        execSync(`sudo security delete-certificate -Z ${sha1}`)
-      })
-    } catch (error) {
-      console.log('新增域名失败')
-      return
-    }
+  const sha1List = getKeyChainCertSha1List()
+  if (sha1List.length) {
+    console.log(lan.host_add_need_rebuild_and_trusted || '新增域名需要更新证书并重新信任')
   } else {
-    console.log('正在更新证书')
+    console.log(lan.host_add_being_upgrading || '正在更新证书')
   }
   try {
-    await rmCertDir(sslCertificateDir)
-  } catch (e) {
-    console.log('新增域名失败')
+    await rmKeyChainCertsBySha1List(sha1List)
+  } catch (error) {
+    console.error(lan.host_add_failure || '新增域名失败')
     return
   }
+  try {
+    await rmDir(sslCertificateDir)
 
-  await createConfigFile({ hosts })
+    await createConfigFile(hosts)
 
-  const result = await createSSLKeyAndCrt()
-  if (result.success) {
-    let certTrusted = false
-    if (isOSX && sha1List.length) {
-      certTrusted = trustSelfSignedCert()
+    await createSSLKeyAndCrt()
+    if (sha1List.length) {
+      await addToKeyChain()
     }
-    console.log('更新成功')
-    console.log('更新后支持的域名')
+    console.log(lan.host_add_success || '更新成功')
+    console.log(lan.host_add_success_support_hosts || '更新后支持的域名')
     const crtHosts = getCrtHosts()
     console.log(crtHosts.join(','))
-    console.log('更新后证书的起止有效时间：')
-    console.log(`${execSync(`openssl x509 -in ${sslCrtPath} -noout -dates`, { encoding: 'utf-8' })}`.trim())
+    console.log(lan.host_add_cert_valid_period || '更新后证书的起止有效时间：')
+    console.log(getCertValidPeriod())
+
+    if (!sha1List.length) {
+      // todo
+    }
+  } catch (e) {
+    console.error(lan.host_add_failure || '新增域名失败')
   }
 }
 
+const keyAndCert = async (hosts = DEFAULTDOMAINS) => {
+  if (typeof hosts === 'string') hosts = [hosts]
+  const existSslKeyAndCrt = hasExistedKeyAndCert()
+  if (existSslKeyAndCrt) {
+    const crtHosts = getCrtHosts()
+    if (isMatched(crtHosts, hosts)) {
+      return {
+        key: fs.readFileSync(sslKeyPath),
+        cert: fs.readFileSync(sslCrtPath),
+        trusted: isCertTrusted() || (isOSX && await addToKeyChain())
+      }
+    } else {
+      if (isOSX) {
+        const sha1List = getKeyChainCertSha1List()
+        if (sha1List.length) {
+          console.log(lan.api_add_hosts_update_and_trust || '新增域名需要更新证书并重新信任')
+        } else {
+          console.log(lan.api_add_hosts_update_cert || '新增域名需要更新证书')
+        }
+        try {
+          await rmKeyChainCertsBySha1List(sha1List)
+        } catch (error) {
+          throw new Error(lan.api_add_hosts_rm_keychain_failure || '卸载老的证书失败，请授权重试')
+        }
+      } else {
+        console.log(lan.api_add_hosts_update_default || '自签名证书要新增支持的域名，正在更新自签名证书')
+      }
+      try {
+        await rmDir(sslCertificateDir)
+      } catch (e) {
+        throw new Error(lan.api_add_hosts_remove_cert_dir_failure || '删除存放原证书的目录失败，请授权重试')
+      }
+      hosts = crtHosts.concat(getAdded(crtHosts, hosts))
+    }
+  }
+
+  await createConfigFile(hosts)
+
+  await createSSLKeyAndCrt()
+  let certTrusted = false
+  try {
+    if (isOSX) {
+      await addToKeyChain()
+      certTrusted = true
+    }
+  } catch (e) {}
+  return {
+    key: fs.readFileSync(sslKeyPath),
+    cert: fs.readFileSync(sslCrtPath),
+    trusted: certTrusted
+  }
+}
+
+const info = () => {
+  if (!judgeExistOnConsole()) return
+
+  const crtHosts = getCrtHosts()
+  console.log(lan.info_ssl_key_path || '密钥文件路径：', sslKeyPath)
+  console.log(lan.info_ssl_cert_path || '自签名证书文件路径：', sslCrtPath)
+  console.log(lan.info_ssl_cert_support_hosts || '自签名证书已经支持的域名：')
+  console.log(crtHosts.join(','))
+  console.log(lan.info_ssl_cert_valid_period || '自签名证书的有效时间：')
+  console.log(getCertValidPeriod())
+  const sha1List = getKeyChainCertSha1List()
+  const sha1 = getCertSha1()
+  if (sha1List.includes(sha1)) {
+    console.log(lan.info_ssl_cert_trusted_desc || '自签名证书已经添加到钥匙串并被始终信任')
+    console.log(lan.info_keychains_cert_name || '自签名证书在钥匙串里的名称：', CN)
+    console.log(lan.info_keychains_cert_sha1 || '自签名证书在钥匙串里的sha-1：', sha1)
+  } else if (isOSX) {
+    console.log(lan.info_ssl_cert_not_trusted || '自签名证书还没被添加到钥匙串，可以运行下面命令，执行添加和始终信任')
+    console.log(lan.info_ssl_cert_trusted_cli_tip || '$ trusted-cert trust')
+  }
+  lan.info_extra_help.forEach(text => {
+    console.log(text)
+  })
+}
+
 module.exports = {
-  obtainSelfSigned,
-  currentState,
   install,
-  unInstall,
-  trustSelfSigned,
-  addHosts
+  info,
+  uninstall,
+  doTrust,
+  addHosts,
+  keyAndCert,
+  setConfig,
+  mergeLan
 }
