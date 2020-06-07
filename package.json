@@ -1,6 +1,6 @@
 {
   "name": "trusted-cert",
-  "version": "0.0.2",
+  "version": "0.0.3-0",
   "description": "A simple tool to generate self signed x509 certificate",
   "bin": {
     "trusted-cert": "./cli.js"
