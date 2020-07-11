@@ -5,13 +5,14 @@ const { install, uninstall, info, doTrust, addHosts, obtainSelfSigned } = requir
 
 program
   .name('trusted-cert')
-  .usage('[global options] command')
+  .usage('[global option] | [command]')
+  // .usage('command')
   .version(pkg.version, '-v, --version', '当前版本')
 
 program.on('--help', () => {
-  console.log('')
-  console.log('先安装，再使用其它命令')
-  console.log('  $ trusted-cert install')
+  // console.log('')
+  // console.log('先安装，再使用其它命令')
+  // console.log('  $ trusted-cert install')
 })
 
 program

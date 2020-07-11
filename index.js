@@ -1,6 +1,6 @@
 const fs = require('fs')
 const inquirer = require('inquirer')
-const { setConfig, getConfig } = require('./lib/configuration')
+const { setConfig, getConfig } = require('./lib/config')
 const isOSX = process.platform === 'darwin'
 const {
   hasExistedKeyAndCert,
@@ -16,7 +16,7 @@ const {
   rmDir
 } = require('./lib/lib')
 const { isMatched, getAdded } = require('./lib/util')
-const { mergeLan, getLan } = require('./lib/lan')
+const { mergeLan, getLan } = require('./lib/i18n/zh-cn')
 
 const { sslCertificateDir, sslKeyPath, sslCrtPath, CN, defaultDomains } = getConfig()
 const lan = getLan()
@@ -190,7 +190,7 @@ const addHosts = async (hosts = []) => {
       await addToKeyChain()
     }
     console.log(lan.host_add_success || '更新成功')
-    console.log(lan.host_add_success_support_hosts || '更新后支持的域名')
+    console.log(lan.host_add_success_support_hosts || '更新后支持的域名列表')
     const crtHosts = getCrtHosts()
     console.log(crtHosts.join(','))
     console.log(lan.host_add_cert_valid_period || '更新后证书的起止有效时间：')

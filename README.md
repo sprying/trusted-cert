@@ -1,8 +1,8 @@
 # 简介
-HTTPS自签名证书工具，是为了解决启动本地HTTPS服务时，需要繁琐的创建自签名证书。它提供命令行调用方式，可以做到一键生成自签名证书并添加到macOS钥匙串，后续通过命令行还可以随时查看和管理证书内容，同时它还提供API接口，可以很方便地集成到命令行工具里。
+HTTPS自签名证书工具，是为了解决启动本地HTTPS服务时，需要手动创建自签名证书的繁琐。使用命令行可以做到一键生成自签名证书并添加到macOS钥匙串，后续使用命令可以随时查看和管理证书，同时它提供API，方便地集成到工程工具里。
 
 # 使用说明
-## 开始使用
+## 开始使用--使用命令行方式
 1. **生成密钥和证书** 创建过程会提示输入域名，这里使用默认域名，直接回车；输入密码，向macOS钥匙串里添加证书。
 	
 	```bash
@@ -66,6 +66,7 @@ HTTPS自签名证书工具，是为了解决启动本地HTTPS服务时，需要�
 	})
 	```
 3. 浏览器打开访问<https://test.m.taobao.com:8000/>，发现网址标为了安全
+
 ## 命令行功能介绍
 ```bash
 trusted-cert --help
@@ -114,15 +115,16 @@ Commands:
 # 附配置服务的HTTPS证书示例
 ## webpack
 ```javascript
-// ...
-devServer: {
+{
+  // ...
+  devServer: {
     https: {
       key: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.key')),
-      cert: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.crt')),
-    },
-  },
-},
-// ...
+      cert: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.crt'))
+    }
+  }
+  // ...
+}
 ```
 
 ## nginx
