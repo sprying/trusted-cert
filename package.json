@@ -1,6 +1,6 @@
 {
   "name": "trusted-cert",
-  "version": "1.0.0-4",
+  "version": "1.0.0-5",
   "description": "A simple tool to generate self signed x509 certificate",
   "bin": {
     "trusted-cert": "./cli.js"
@@ -8,6 +8,7 @@
   "main": "index.js",
   "dependencies": {
     "application-config-path": "^0.1.0",
+    "command-exists": "^1.2.9",
     "commander": "^5.0.0",
     "fs-extra": "^9.0.0",
     "inquirer": "^7.1.0"

@@ -1,5 +1,6 @@
 const fs = require('fs')
 const inquirer = require('inquirer')
+const { sync: commandExists } = require('command-exists')
 const { setConfig, getConfig } = require('./lib/config')
 const isOSX = process.platform === 'darwin'
 const {
@@ -59,6 +60,9 @@ const getInquirerAnswer = async () => {
 }
 
 const install = async () => {
+  if (!commandExists('openssl')) {
+    throw new Error('OpenSSL not found: OpenSSL is required to generate SSL certificates - make sure it is installed and available in your PATH')
+  }
   const sha1List = getKeyChainCertSha1List()
   const existCrtDir = fs.existsSync(sslCertificateDir)
   if (sha1List.length || existCrtDir) {

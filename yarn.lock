@@ -187,6 +187,11 @@ color-name@~1.1.4:
   resolved "https://registry.npm.alibaba-inc.com/color-name/download/color-name-1.1.4.tgz#c2a09a87acbde69543de6f63fa3995c826c536a2"
   integrity sha1-wqCah6y95pVD3m9j+jmVyCbFNqI=
 
+command-exists@^1.2.9:
+  version "1.2.9"
+  resolved "https://registry.npm.alibaba-inc.com/command-exists/download/command-exists-1.2.9.tgz#c50725af3808c8ab0260fd60b01fbfa25b954f69"
+  integrity sha1-xQclrzgIyKsCYP1gsB+/oluVT2k=
+
 commander@^5.0.0:
   version "5.0.0"
   resolved "https://registry.npm.alibaba-inc.com/commander/download/commander-5.0.0.tgz#dbf1909b49e5044f8fdaf0adc809f0c0722bdfd0"
