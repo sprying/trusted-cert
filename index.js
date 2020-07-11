@@ -18,7 +18,7 @@ const {
 const { isMatched, getAdded } = require('./lib/util')
 const { mergeLan, getLan } = require('./lib/lan')
 
-const { sslCertificateDir, sslKeyPath, sslCrtPath, CN, DEFAULTDOMAINS } = getConfig()
+const { sslCertificateDir, sslKeyPath, sslCrtPath, CN, defaultDomains } = getConfig()
 const lan = getLan()
 
 /**
@@ -42,8 +42,8 @@ const getInquirerAnswer = async () => {
   const questions = [{
     type: 'input',
     name: 'domains',
-    message: DEFAULTDOMAINS.length ? lan.install_inquirer_domains_with_default : lan.install_inquirer_domains,
-    default: DEFAULTDOMAINS.join(',')
+    message: defaultDomains.length ? lan.install_inquirer_domains_with_default : lan.install_inquirer_domains,
+    default: defaultDomains.join(',')
   }]
   let { domains } = await inquirer.prompt(questions)
   if (domains) {
@@ -204,7 +204,7 @@ const addHosts = async (hosts = []) => {
   }
 }
 
-const keyAndCert = async (hosts = DEFAULTDOMAINS) => {
+const keyAndCert = async (hosts = defaultDomains) => {
   if (typeof hosts === 'string') hosts = [hosts]
   const existSslKeyAndCrt = hasExistedKeyAndCert()
   if (existSslKeyAndCrt) {
