@@ -80,6 +80,11 @@ ansi-styles@^4.1.0:
     "@types/color-name" "^1.1.1"
     color-convert "^2.0.1"
 
+application-config-path@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.npm.alibaba-inc.com/application-config-path/download/application-config-path-0.1.0.tgz#193c5f0a86541a4c66fba1e2dc38583362ea5e8f"
+  integrity sha1-GTxfCoZUGkxm+6Hi3DhYM2LqXo8=
+
 argparse@^1.0.7:
   version "1.0.10"
   resolved "https://registry.npm.alibaba-inc.com/argparse/download/argparse-1.0.10.tgz#bcd6791ea5ae09725e17e5ad988134cd40b3d911"
