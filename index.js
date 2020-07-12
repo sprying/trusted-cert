@@ -1,6 +1,7 @@
 const fs = require('fs')
 const inquirer = require('inquirer')
 const { sync: commandExists } = require('command-exists')
+const debug = require('debug')('selfcert')
 const { setConfig, getConfig } = require('./lib/config')
 const isOSX = process.platform === 'darwin'
 const {
@@ -26,7 +27,7 @@ const lan = getLan()
  * 判断没安装过证书给提示
  * @returns {boolean}
  */
-const judgeExistOnConsole = () => {
+const judgeExistAndPrint = () => {
   if (!hasExistedKeyAndCert()) {
     console.warn(lan.host_add_no_install || '还没有安装自签名证书，运行下面命令安装使用')
     console.warn(lan.host_add_no_install_operation_tip || '$ trusted-cert install')
@@ -129,15 +130,17 @@ const uninstall = async () => {
 }
 
 const doTrust = async () => {
-  if (!judgeExistOnConsole()) return
+  if (!judgeExistAndPrint()) return
 
-  if (!isOSX) {
-    console.warn(lan.add_trust_only_support_osx || '目前仅支持OSX系统')
-    return
-  }
+  debug('添加信任')
+  // if (!isOSX) {
+  //   console.warn(lan.add_trust_only_support_osx || '目前仅支持OSX系统')
+  //   return
+  // }
 
   const sha1List = getKeyChainCertSha1List()
   const sha1 = getCertSha1()
+  debug('证书的sha1是 %o', sha1)
   if (sha1List.includes(sha1)) {
     console.log(lan.add_trust_repeat_add_tip || '钥匙串里已经添加过，无须重复添加')
     console.log(lan.add_trust_keychain_cert_info || '在钥匙串里证书的信息：')
@@ -147,6 +150,7 @@ const doTrust = async () => {
     try {
       await addToKeyChain()
       console.log(lan.add_trust_keychain_cert_success || '添加并信任成功，钥匙串里名称是：', CN)
+      debug('添加信任成功')
     } catch (e) {
       console.error(lan.add_trust_failure || '添加失败')
     }
@@ -158,7 +162,7 @@ const addHosts = async (hosts = []) => {
     console.warn(lan.host_add_no_input || '输入要支持的host')
     return
   }
-  if (!judgeExistOnConsole()) return
+  if (!judgeExistAndPrint()) return
 
   const crtHosts = getCrtHosts()
   const matched = isMatched(crtHosts, hosts)
@@ -261,7 +265,7 @@ const keyAndCert = async (hosts = defaultDomains) => {
 }
 
 const info = () => {
-  if (!judgeExistOnConsole()) return
+  if (!judgeExistAndPrint()) return
 
   const crtHosts = getCrtHosts()
   console.log(lan.info_ssl_key_path || '密钥文件路径：', sslKeyPath)
