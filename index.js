@@ -138,7 +138,7 @@ const doTrust = async () => {
   // }
 
   const sha1List = getKeyChainCertSha1List()
-  debug('钥匙串已添加的sha1列表 %o', sha1List)
+  debug('已添加到钥匙串sha1列表 %o', sha1List)
   const sha1 = getCertSha1()
   debug('要新增的sha1是 %o', sha1)
   if (sha1List.includes(sha1)) {
