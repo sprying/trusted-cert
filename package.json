@@ -26,17 +26,17 @@
     "url": "https://github.com/sprying/trusted-cert/issues"
   },
   "keywords": [
-    "x509",
+    "ssl",
+    "openssl",
     "certificate",
+    "trust store",
+    "x509",
     "certificates",
     "self-signed",
     "self-signing",
     "credential",
     "credentials",
     "keychain",
-    "ssl",
-    "openssl",
-    "trust store",
     "ca"
   ],
   "files": [
