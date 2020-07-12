@@ -132,15 +132,15 @@ const uninstall = async () => {
 const doTrust = async () => {
   if (!judgeExistAndPrint()) return
 
-  debug('添加信任')
   // if (!isOSX) {
   //   console.warn(lan.add_trust_only_support_osx || '目前仅支持OSX系统')
   //   return
   // }
 
   const sha1List = getKeyChainCertSha1List()
+  debug('钥匙串已添加的sha1列表 %o', sha1List)
   const sha1 = getCertSha1()
-  debug('证书的sha1是 %o', sha1)
+  debug('要新增的sha1是 %o', sha1)
   if (sha1List.includes(sha1)) {
     console.log(lan.add_trust_repeat_add_tip || '钥匙串里已经添加过，无须重复添加')
     console.log(lan.add_trust_keychain_cert_info || '在钥匙串里证书的信息：')
@@ -150,7 +150,6 @@ const doTrust = async () => {
     try {
       await addToKeyChain()
       console.log(lan.add_trust_keychain_cert_success || '添加并信任成功，钥匙串里名称是：', CN)
-      debug('添加信任成功')
     } catch (e) {
       console.error(lan.add_trust_failure || '添加失败')
     }
