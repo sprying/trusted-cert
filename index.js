@@ -82,15 +82,14 @@ const install = async () => {
   await createSSLKeyAndCrt()
   console.log(lan.install_create_key_cert_file_success || '成功创建密钥和自签名证书')
 
-  // if (isOSX) {
-    console.log(lan.install_add_keychain_process_tip || '向系统的钥匙串里添加证书并始终信任...')
-    try {
-      await addToKeyChain()
-      console.log(lan.install_add_keychain_success || '添加并信任成功，钥匙串里名称为：', CN)
-    } catch (e) {
-      console.warn(lan.install_add_keychain_failure || '钥匙串添加证书失败')
-    }
-  // }
+  console.log(lan.install_add_keychain_process_tip || '向系统的钥匙串里添加证书并始终信任...')
+  try {
+    await addToKeyChain()
+    console.log(lan.install_add_keychain_success || '添加并信任成功，钥匙串里名称为：', CN)
+  } catch (e) {
+    console.warn(lan.install_add_keychain_failure || '钥匙串添加证书失败')
+  }
+
   console.log(lan.install_over || '安装结束')
   lan.install_over_extra_info.forEach(text => {
     console.log(text)
