@@ -2,7 +2,7 @@ const fs = require('fs')
 const inquirer = require('inquirer')
 const { sync: commandExists } = require('command-exists')
 const debug = require('debug')('selfcert')
-const { setConfig, getConfig } = require('./lib/config')
+const { setConfig, getConfig } = require('./lib/config/index')
 const isOSX = process.platform === 'darwin'
 const {
   hasExistedKeyAndCert,
@@ -210,7 +210,7 @@ const addHosts = async (hosts = []) => {
   }
 }
 
-const keyAndCert = async (hosts = defaultDomains) => {
+const certificateFor = async (hosts = defaultDomains) => {
   if (typeof hosts === 'string') hosts = [hosts]
   const existSslKeyAndCrt = hasExistedKeyAndCert()
   if (existSslKeyAndCrt) {
@@ -219,23 +219,19 @@ const keyAndCert = async (hosts = defaultDomains) => {
       return {
         key: fs.readFileSync(sslKeyPath),
         cert: fs.readFileSync(sslCrtPath),
-        trusted: isCertTrusted() || (isOSX && await addToKeyChain())
+        trusted: isCertTrusted() || await addToKeyChain()
       }
     } else {
-      if (isOSX) {
-        const sha1List = getKeyChainCertSha1List()
-        if (sha1List.length) {
-          console.log(lan.api_add_hosts_update_and_trust || '新增域名需要更新证书并重新信任')
-        } else {
-          console.log(lan.api_add_hosts_update_cert || '新增域名需要更新证书')
-        }
-        try {
-          await delTrusted(CN)
-        } catch (error) {
-          throw new Error(lan.api_add_hosts_rm_keychain_failure || '卸载老的证书失败，请授权重试')
-        }
+      const sha1List = getKeyChainCertSha1List()
+      if (sha1List.length) {
+        console.log(lan.api_add_hosts_update_and_trust || '新增域名需要更新证书并重新信任')
       } else {
-        console.log(lan.api_add_hosts_update_default || '自签名证书要新增支持的域名，正在更新自签名证书')
+        console.log(lan.api_add_hosts_update_cert || '新增域名需要更新证书')
+      }
+      try {
+        await delTrusted(CN)
+      } catch (error) {
+        throw new Error(lan.api_add_hosts_rm_keychain_failure || '卸载老的证书失败，请授权重试')
       }
       try {
         await rmDir(sslCertificateDir)
@@ -251,10 +247,8 @@ const keyAndCert = async (hosts = defaultDomains) => {
   await createSSLKeyAndCrt()
   let certTrusted = false
   try {
-    if (isOSX) {
-      await addToKeyChain()
-      certTrusted = true
-    }
+    await addToKeyChain()
+    certTrusted = true
   } catch (e) {}
   return {
     key: fs.readFileSync(sslKeyPath),
@@ -294,7 +288,7 @@ module.exports = {
   uninstall,
   doTrust,
   addHosts,
-  keyAndCert,
+  certificateFor,
   setConfig,
   mergeLan
 }

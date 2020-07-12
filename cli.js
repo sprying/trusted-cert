@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const { program } = require('commander')
 const pkg = require('./package.json')
-const { install, uninstall, info, doTrust, addHosts, obtainSelfSigned } = require('./index')
+const { install, uninstall, info, doTrust, addHosts, certificateFor } = require('./index')
 
 program
   .name('trusted-cert')
@@ -54,7 +54,7 @@ program
   .command('api', { noHelp: true })
   .description('调用api的示例')
   .action(() => {
-    obtainSelfSigned(['*.fa']).then(res => {
+    certificateFor(['*.fa']).then(res => {
       console.log(res)
     })
   })
