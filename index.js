@@ -8,7 +8,7 @@ const {
   hasExistedKeyAndCert,
   getCrtHosts,
   getKeyChainCertSha1List,
-  rmKeyChainCertsBySha1List,
+  delTrusted,
   createConfigFile,
   createSSLKeyAndCrt,
   addToKeyChain,
@@ -109,7 +109,7 @@ const uninstall = async () => {
   if (sha1List.length) {
     console.log(lan.uninstall_del_keychain || '正在删除钥匙串里名称「%s」的证书', CN)
     try {
-      await rmKeyChainCertsBySha1List(sha1List)
+      await delTrusted(CN)
       console.log(lan.uninstall_del_keychain_success || '删除成功')
     } catch (error) {
       console.error(lan.uninstall_del_keychain_failure || '删除失败，流程结束')
@@ -181,7 +181,7 @@ const addHosts = async (hosts = []) => {
     console.log(lan.host_add_being_upgrading || '正在更新证书')
   }
   try {
-    await rmKeyChainCertsBySha1List(sha1List)
+    await delTrusted(CN)
   } catch (error) {
     console.error(lan.host_add_failure || '新增域名失败')
     return
@@ -230,7 +230,7 @@ const keyAndCert = async (hosts = defaultDomains) => {
           console.log(lan.api_add_hosts_update_cert || '新增域名需要更新证书')
         }
         try {
-          await rmKeyChainCertsBySha1List(sha1List)
+          await delTrusted(CN)
         } catch (error) {
           throw new Error(lan.api_add_hosts_rm_keychain_failure || '卸载老的证书失败，请授权重试')
         }
