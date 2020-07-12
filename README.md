@@ -42,11 +42,11 @@ HTTPS自签名证书工具，是为了解决启动本地HTTPS服务时，需要�
 2. 调用api  
 
 	```javascript
-	const https = require('https');
-	const fs = require('fs');
+	const https = require('https')
+	const fs = require('fs')
 	const { certificateFor } = require('trusted-cert')
-	const hosts = ['test.m.taobao.com'] // 本地https服务要使用的host
-	certificateFor(hosts).then(keyAndCert => {
+	const hosts = ['test.m.taobao.com'] // 本地https服务要使用的domain
+	certificateFor(hosts).then((keyAndCert) => {
 	    // keyAndCert
 	    // {
 	    //     key,
@@ -55,8 +55,8 @@ HTTPS自签名证书工具，是为了解决启动本地HTTPS服务时，需要�
 	    // }
 		https.createServer(keyAndCert, (req, res) => {
 		  res.writeHead(200);
-		  res.end('hello world\n');
-		}).listen(8000);
+		  res.end('hello world\n')
+		}).listen(8000)
 	})
 	```
 3. 浏览器打开访问<https://test.m.taobao.com:8000/>，发现网址标为了安全
