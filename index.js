@@ -279,7 +279,7 @@ const info = () => {
     console.log(lan.info_ssl_cert_trusted_desc || '自签名证书已经添加到钥匙串并被始终信任')
     console.log(lan.info_keychains_cert_name || '自签名证书在钥匙串里的名称：', CN)
     console.log(lan.info_keychains_cert_sha1 || '自签名证书在钥匙串里的sha-1：', sha1)
-  } else if (isOSX) {
+  } else {
     console.log(lan.info_ssl_cert_not_trusted || '自签名证书还没被添加到钥匙串，可以运行下面命令，执行添加和始终信任')
     console.log(lan.info_ssl_cert_trusted_cli_tip || '$ trusted-cert trust')
   }
