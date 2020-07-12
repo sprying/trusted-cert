@@ -1,5 +1,5 @@
 # 简介
-HTTPS自签名证书工具，是为了解决启动本地HTTPS服务时，需要手动创建自签名证书的繁琐。使用命令行可以做到一键生成自签名证书并添加到macOS钥匙串，后续使用命令可以随时查看和管理证书，同时它提供API，方便地集成到工程工具里。
+HTTPS自签名证书工具，是为了解决启动本地HTTPS服务时，需要手动创建自签名证书的繁琐。使用命令行做到一键生成自签名证书并添加到系统钥匙串，后续使用命令可以随时查看和管理证书，同时提供了API，方便地集成到工程工具里。
 
 # 使用说明
 ## 开始使用--使用命令行方式
@@ -44,22 +44,16 @@ HTTPS自签名证书工具，是为了解决启动本地HTTPS服务时，需要�
 	```javascript
 	const https = require('https');
 	const fs = require('fs');
-	const { obtainSelfSigned } = require('trusted-cert')
+	const { certificateFor } = require('trusted-cert')
 	const hosts = ['test.m.taobao.com'] // 本地https服务要使用的host
-	obtainSelfSigned(hosts).then(result => {
-	    // result
+	certificateFor(hosts).then(keyAndCert => {
+	    // keyAndCert
 	    // {
-	    //     success: true,
-	    //     sslKeyPath: '/Users/xxx/.self-signed-cert/ssl.key',
-	    //     sslCrtPath: '/Users/xxx/.self-signed-cert/ssl.crt',
-	    //     certTrusted: true
+	    //     key,
+	    //     cert,
+	    //     trusted: true
 	    // }
-		const options = {
-	      key: fs.readFileSync(result.sslKeyPath),
-	      cert: fs.readFileSync(result.sslCrtPath),
-		};
-		
-		https.createServer(options, (req, res) => {
+		https.createServer(keyAndCert, (req, res) => {
 		  res.writeHead(200);
 		  res.end('hello world\n');
 		}).listen(8000);
