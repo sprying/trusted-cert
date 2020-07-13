@@ -4,7 +4,7 @@ const pkg = require('./package.json')
 const { install, uninstall, info, doTrust, addHosts, certificateFor } = require('./index')
 
 program
-  .name('trusted-cert')
+  .name('httpscert')
   .usage('[global option] | [command]')
   // .usage('command')
   .version(pkg.version, '-v, --version', '当前版本')
@@ -12,7 +12,7 @@ program
 program.on('--help', () => {
   // console.log('')
   // console.log('先安装，再使用其它命令')
-  // console.log('  $ trusted-cert install')
+  // console.log('  $ httpscert install')
 })
 
 program

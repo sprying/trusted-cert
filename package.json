@@ -1,9 +1,9 @@
 {
-  "name": "trusted-cert",
+  "name": "httpscert",
   "version": "1.0.0-18",
   "description": "A simple tool to generate self signed x509 certificate",
   "bin": {
-    "trusted-cert": "./cli.js"
+    "httpscert": "./cli.js"
   },
   "main": "index.js",
   "dependencies": {
@@ -17,18 +17,20 @@
     "standard": "^14.3.3"
   },
   "author": "sprying<sprying.fang@qq.com>",
-  "homepage": "https://github.com/sprying/trusted-cert/README.md",
+  "license": "MIT",
+  "homepage": "https://github.com/sprying/httpscert/README.md",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sprying/trusted-cert"
+    "url": "https://github.com/sprying/httpscert"
   },
   "bugs": {
-    "url": "https://github.com/sprying/trusted-cert/issues"
+    "url": "https://github.com/sprying/httpscert/issues"
   },
   "keywords": [
     "ssl",
     "openssl",
     "certificate",
+    "https",
     "trust store",
     "x509",
     "certificates",
