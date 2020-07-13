@@ -1,6 +1,6 @@
 {
   "name": "httpscert",
-  "version": "1.0.0-18",
+  "version": "1.0.0-19",
   "description": "A simple tool to generate self signed x509 certificate",
   "bin": {
     "httpscert": "./cli.js"
