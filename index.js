@@ -30,7 +30,7 @@ const lan = getLan()
 const judgeExistAndPrint = () => {
   if (!hasExistedKeyAndCert()) {
     console.warn(lan.host_add_no_install || '还没有安装自签名证书，运行下面命令安装使用')
-    console.warn(lan.host_add_no_install_operation_tip || '$ httpscert install')
+    console.warn(lan.host_add_no_install_operation_tip || '$ trusted-cert install')
     return false
   }
   return true
@@ -275,7 +275,7 @@ const info = () => {
     console.log(lan.info_keychains_cert_sha1 || '自签名证书在钥匙串里的sha-1：', sha1)
   } else {
     console.log(lan.info_ssl_cert_not_trusted || '自签名证书还没被添加到钥匙串，可以运行下面命令，执行添加和始终信任')
-    console.log(lan.info_ssl_cert_trusted_cli_tip || '$ httpscert trust')
+    console.log(lan.info_ssl_cert_trusted_cli_tip || '$ trusted-cert trust')
   }
   lan.info_extra_help.forEach(text => {
     console.log(text)
