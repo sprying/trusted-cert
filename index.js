@@ -221,6 +221,8 @@ const certificateFor = async (hosts = defaultDomains) => {
       return {
         key: fs.readFileSync(sslKeyPath),
         cert: fs.readFileSync(sslCrtPath),
+        keyFilePath: sslKeyPath,
+        certFilePath: sslCrtPath,
         trusted: isCertTrusted() || await addToKeyChain()
       }
     } else {
@@ -254,8 +256,8 @@ const certificateFor = async (hosts = defaultDomains) => {
   } catch (e) {}
   return {
     key: fs.readFileSync(sslKeyPath),
-    keyFilePath: sslKeyPath,
     cert: fs.readFileSync(sslCrtPath),
+    keyFilePath: sslKeyPath,
     certFilePath: sslCrtPath,
     trusted: certTrusted
   }
