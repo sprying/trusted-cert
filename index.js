@@ -19,6 +19,7 @@ const {
 } = require('./lib/lib')
 const { isMatched, getAdded } = require('./lib/util')
 const { mergeLan, getLan } = require('./lib/i18n/zh-cn')
+const { SSL_OP_ALL } = require('constants')
 
 const { sslCertificateDir, sslKeyPath, sslCrtPath, CN, defaultDomains } = getConfig()
 const lan = getLan()
@@ -216,6 +217,7 @@ const certificateFor = async (hosts = defaultDomains) => {
   if (existSslKeyAndCrt) {
     const crtHosts = getCrtHosts()
     if (isMatched(crtHosts, hosts)) {
+      debug('之前已经添加过域名，跳过返回之前的域名')
       return {
         key: fs.readFileSync(sslKeyPath),
         cert: fs.readFileSync(sslCrtPath),
@@ -252,7 +254,9 @@ const certificateFor = async (hosts = defaultDomains) => {
   } catch (e) {}
   return {
     key: fs.readFileSync(sslKeyPath),
+    keyFilePath: sslKeyPath,
     cert: fs.readFileSync(sslCrtPath),
+    certFilePath: sslCrtPath,
     trusted: certTrusted
   }
 }

@@ -1,3 +1,5 @@
+# 2021-04-15
+1. certificateFor api新增返回两个字段
 # 2020-07-14
 1. 支持window
 2. 包名从trusted-cert改成https-cert
