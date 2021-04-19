@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+
 const { program } = require('commander')
 const pkg = require('./package.json')
-const { install, uninstall, info, doTrust, addHosts, certificateFor } = require('./index')
+const { install, uninstall, info, doTrust, addHosts, certificateFor } = require('./dist/index')
 
 program
   .name('trusted-cert')

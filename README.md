@@ -1,21 +1,27 @@
 # 简介
-HTTPS自签名证书工具，是为了解决启动本地HTTPS服务时，需要手动创建自签名证书的繁琐。通过命令行实现一键生成自签名证书并添加到系统钥匙串，后续使用命令可以继续查看和管理证书，工具同时提供了API的调用，方便集成到工程工具里。
-该工具目前支持mac和windows系统，下面示例是使用mac。
+HTTPS自签名证书工具，自动生成自签名证书并添加到系统钥匙串，支持mac和windows系统，提供了命令行和供其它命令行调用API的两种使用方式，下面示例是使用mac。
 
 # 使用说明
-## 开始使用--使用命令行方式
+## 方式一“命令行”
+### 快速使用
+
 1. **生成密钥和证书** 创建过程会提示输入域名，这里使用默认域名，直接回车；输入密码，向macOS钥匙串里添加证书。
 	
+	a. 安装命令行工具
 	```bash
 	# 全局安装
 	npm install trusted-cert -g
 	# 或者使用yarn
 	yarn global add trusted-cert
+	```
 	
-	# 一键生成自签名证书并添加到macOS钥匙串
+	b. 一键生成自签名证书并添加到macOS钥匙串
+
+	```bash
 	trusted-cert install
 	```
-2. 在nodejs中使用
+
+2. 在nodejs中使用生成的密钥和证书（更多方式参考最后的【附配置服务的HTTPS证书示例】）
  
 	```javascript
 	const https = require('https');
@@ -23,8 +29,8 @@ HTTPS自签名证书工具，是为了解决启动本地HTTPS服务时，需要�
 	const path = require('path');
 	
 	const options = {
-      key: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.key')),
-      cert: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.crt')),
+      key: fs.readFileSync(path.join(process.env.HOME, '.trusted-cert/ssl.key')),
+      cert: fs.readFileSync(path.join(process.env.HOME, '.trusted-cert/ssl.crt')),
 	};
 	
 	https.createServer(options, (req, res) => {
@@ -32,37 +38,11 @@ HTTPS自签名证书工具，是为了解决启动本地HTTPS服务时，需要�
 	  res.end('hello world\n');
 	}).listen(8000);
 	```
+
 3. 浏览器打开访问<https://localhost:8000/>，发现网址标为了安全
 
-## 使用api方式
-1. 安装依赖  
-	```bash
-	npm install trusted-cert -D
-	```
-	
-2. 调用api  
+### 命令行功能介绍
 
-	```javascript
-	const https = require('https')
-	const fs = require('fs')
-	const { certificateFor } = require('trusted-cert')
-	const hosts = ['test.m.taobao.com'] // 本地https服务要使用的domain
-	certificateFor(hosts).then((keyAndCert) => {
-	    // keyAndCert
-	    // {
-	    //     key,
-	    //     cert,
-	    //     trusted: true
-	    // }
-		https.createServer(keyAndCert, (req, res) => {
-		  res.writeHead(200);
-		  res.end('hello world\n')
-		}).listen(8000)
-	})
-	```
-3. 浏览器打开访问<https://test.m.taobao.com:8000/>，发现网址标为了安全
-
-## 命令行功能介绍
 ```bash
 trusted-cert --help
 ```
@@ -102,10 +82,36 @@ Commands:
 删除本地存放密钥、证书等文件的目录，删除钥匙串里添加的证书
 
 
-## api介绍
-在命令行工具里里局部安装【HTTPS自签名证书工具】，使用的时候通过api传入要使用的host列表，工具先检测是否安装过证书，没安装过开始安装，安装过的继续检测装过的证书是否已经支持这些host，还有其它检测，针对检测到点一一修复，最后返回密钥和证书的文件位置等信息。本地起https服务时，直接读取使用api返回的密钥和证书文件位置。
+## 方式二“供他方命令行调用的api”
+### 快速使用
+1. 安装依赖  
+	```bash
+	npm install trusted-cert --save
+	# 或者使用yarn
+	yarn add trusted-cert
+	```
+	
+2. 调用api  
 
-考虑到对于开发者而言，在电脑中只需要一份ssl的密钥和自签名证书就够用了，所以不管是命令行方式还是api，只需要生成一份文件存放在系统固定位置`~/.self-signed-cert`，工具在钥匙串里也只有一份自签名证书，由工具来管理自证书包括生成、销毁、重新生成的生命周期。
+	```javascript
+	const https = require('https')
+	const fs = require('fs')
+	const { certificateFor } = require('trusted-cert')
+	const hosts = ['test.m.taobao.com'] // 本地https服务要使用的domain
+	certificateFor(hosts).then((keyAndCert) => {
+		https.createServer(keyAndCert, (req, res) => {
+		  res.writeHead(200);
+		  res.end('hello world\n')
+		}).listen(8000)
+	})
+	```
+
+3. 浏览器打开访问<https://test.m.taobao.com:8000/>，发现网址标为了安全
+
+### api介绍
+调用api传入要使用的host列表，工具先检测是否安装过证书，没安装过开始安装，安装过的继续检测装过的证书是否已经支持这些host，还有其它检测，针对检测到点一一修复，最后返回密钥和证书的文件路径等信息。
+
+考虑到对于开发者而言，在电脑中只需要一份ssl的密钥和自签名证书就够用了，所以不管是命令行方式还是api，只生成一份文件存放在系统固定位置`~/.trusted-cert`，工具在钥匙串里也只有一份自签名证书，由工具来管理自证书包括生成、销毁、重新生成的生命周期。
 
 # 附配置服务的HTTPS证书示例
 ## webpack
@@ -114,8 +120,8 @@ Commands:
   // ...
   devServer: {
     https: {
-      key: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.key')),
-      cert: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.crt'))
+      key: fs.readFileSync(path.join(process.env.HOME, '.trusted-cert/ssl.key')),
+      cert: fs.readFileSync(path.join(process.env.HOME, '.trusted-cert/ssl.crt'))
     }
   }
   // ...
@@ -130,8 +136,8 @@ server {
   server_name shop.alimama.com;
  
  ssl on;
-  ssl_certificate     /Users/xxx/.self-signed-cert/ssl.crt;
-  ssl_certificate_key /Users/xxx/.self-signed-cert/ssl.key;
+  ssl_certificate     /Users/xxx/.trusted-cert/ssl.crt;
+  ssl_certificate_key /Users/xxx/.trusted-cert/ssl.key;
  
   location  / {
     proxy_pass  http://127.0.0.1:8002;
@@ -148,8 +154,8 @@ const fs = require('fs');
 const path = require('path');
 
 const options = {
-  key: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.key')),
-  cert: fs.readFileSync(path.join(process.env.HOME, '.self-signed-cert/ssl.crt')),
+  key: fs.readFileSync(path.join(process.env.HOME, '.trusted-cert/ssl.key')),
+  cert: fs.readFileSync(path.join(process.env.HOME, '.trusted-cert/ssl.crt')),
 };
 
 https.createServer(options, (req, res) => {

@@ -1,13 +1,22 @@
-const fs = require('fs')
-const { exec, execSync } = require('child_process')
-const { openssl } = require('./util')
-const fse = require('fs-extra')
-const { sync: rimraf } = require('rimraf')
+import fs from 'fs'
+import { exec, execSync } from 'child_process'
+import fse from 'fs-extra'
+import { sync as rimraf } from 'rimraf'
+import Debug from 'debug'
+import Moment from 'moment'
+import { getConfig } from './config/index'
+import { openssl } from './util'
+import { 
+  addToKeyChain, 
+  getKeyChainCertSha1List,
+  delTrusted
+} from './platform'
+
 const isOSX = process.platform === 'darwin'
 const isWindow = process.platform === 'win32'
 const isLinux = process.platform === 'linux'
-const debug = require('debug')('selfcert:lib')
-const { getConfig } = require('./config/index')
+
+const debug = Debug('trusted-cert:lib')
 const { sslCertificateDir, sslConfigFile, sslKeyPath, sslCrtPath, CN } = getConfig()
 const createCnfFile = (domains) => {
   fs.writeFileSync(sslConfigFile, `
@@ -34,12 +43,12 @@ ${domains.map((item, index) => {
     `.trim())
 }
 
-const createConfigFile = async (domains) => {
+export const createConfigFile = async (domains) => {
   await fse.ensureDir(sslCertificateDir)
   createCnfFile(domains)
 }
 
-const createSSLKeyAndCrt = () => new Promise((resolve, reject) => {
+export const createSSLKeyAndCrt = () : Promise<void> => new Promise((resolve, reject) => {
   try {
     openssl(['req', '-new', '-newkey', 'rsa:2048', '-sha1', '-days', '3650',
       '-nodes', '-x509', '-keyout', sslKeyPath, '-out', sslCrtPath, '-config', sslConfigFile])
@@ -47,44 +56,15 @@ const createSSLKeyAndCrt = () => new Promise((resolve, reject) => {
   } catch (e) {
     reject(e)
   }
-  // exec(`openssl req \
-  //   -new \
-  //   -newkey rsa:2048 \
-  //   -sha1 \
-  //   -days 3650 \
-  //   -nodes \
-  //   -x509 \
-  //   -keyout ${sslKeyPath} \
-  //   -out ${sslCrtPath} \
-  //   -config ${sslConfigFile}`, (error, stdout, stderr) => {
-  //   if (error) {
-  //     reject(error)
-  //     return
-  //   }
-  //   resolve()
-  // })
 })
-
-/**
- * 添加到系统钥匙串，信任证书
- * @returns {Promise<void>}
- */
-const addToKeyChain = () => awiat import(`./platform/${process.platform}`).addStore(sslCrtPath)
-
-/**
- * 获取钥匙串里工具创建的证书sha1列表
- * @param certName
- */
-const getKeyChainCertSha1List = await import(`./platform/${process.platform}`).getKeyChainCertSha1List.bind(null, CN)
 
 /**
  * 获取证书里支持的域名
  * @param sslCrtPath
  * @returns {string[]}
  */
-const getCrtHosts = () => {
+export const getCrtHosts = () => {
   if (isWindow) {
-    // return openssl(['x509', '-in', sslCrtPath, '-noout', '-text', '|', 'findstr', 'DNS']).trim().split(',').filter(item => item.includes('DNS:')).map(item => item.trim().replace(/DNS:/, ''))
     return execSync(`openssl x509 -in ${sslCrtPath} -noout -text | findstr DNS`, { encoding: 'utf-8' }).trim().split(',').filter(item => item.includes('DNS:')).map(item => item.trim().replace(/DNS:/, ''))
   } else {
     return execSync(`openssl x509 -in '${sslCrtPath}' -noout -text | grep DNS`, { encoding: 'utf-8' }).trim().split(',').filter(item => item.includes('DNS:')).map(item => item.trim().replace(/DNS:/, ''))
@@ -93,18 +73,19 @@ const getCrtHosts = () => {
 
 /**
  * 获取证书的有效时间
- * @returns {*}
  */
-const getCertValidPeriod = () => {
-  return openssl(['x509', '-in', sslCrtPath, '-noout', '-dates'], { encoding: 'utf-8' }).trim()
+export const getCertValidPeriod = (): string => {
+  return openssl(['x509', '-in', sslCrtPath, '-noout', '-dates'], { encoding: 'utf-8' }).trim().split('\n').map(item => { 
+    return Moment(new Date(item.replace(/\w+=/, ''))).format('YYYY-MM-DD hh:mm:ss') 
+  }).join(' ~ ')
 }
 /**
  * 证书是否被添加到系统钥匙串
  * @param sslCrtPath
  * @returns {boolean}
  */
-const isCertTrusted = () => {
-  const sha1List = getKeyChainCertSha1List()
+export const isCertTrusted = async () => {
+  const sha1List = await getKeyChainCertSha1List(CN)
   const sha1 = getCertSha1()
   debug(`已经添加信任的证书sha1${sha1List}`)
   debug(`证书文件的sha1${sha1}`)
@@ -116,32 +97,24 @@ const isCertTrusted = () => {
 }
 
 /**
- * 获取证书的sha1值
+ * 获取缓存的证书文件里的sha1值
  * @param sslCertPath
  * @returns {string}
  */
-const getCertSha1 = () => {
+export const getCertSha1 = () => {
   return openssl(['x509', '-sha1', '-in', sslCrtPath, '-noout', '-fingerprint'], { encoding: 'utf-8' }).split('=')[1].replace(/:/g, '').trim()
 }
 
 /**
- * 删除钥匙串里指定的证书
- * @param sha1List
- * @returns {Promise<unknown>}
+ * 是否创建过密钥和证书的缓存文件
  */
-const delTrusted = require(`./platform/${process.platform}`).removeFromStore
-
-/**
- * 是否创建过密钥和证书
- * @returns {boolean}
- */
-const hasExistedKeyAndCert = () => fs.existsSync(sslKeyPath) && fs.existsSync(sslCrtPath)
+export const hasExistedKeyAndCert = () : boolean => fs.existsSync(sslKeyPath) && fs.existsSync(sslCrtPath)
 
 /**
  * 删除指定目录
  * @returns {*}
  */
-const rmDir = (dir) => new Promise((resolve, reject) => {
+export const rmDir = (dir): Promise<void> => new Promise((resolve, reject) => {
   try {
     // execSync(`rm -rf ${dir}`)
     rimraf(dir)
@@ -159,17 +132,3 @@ const rmDir = (dir) => new Promise((resolve, reject) => {
     }
   }
 })
-
-module.exports = {
-  hasExistedKeyAndCert,
-  delTrusted,
-  getCertSha1,
-  isCertTrusted,
-  getCertValidPeriod,
-  getCrtHosts,
-  getKeyChainCertSha1List,
-  addToKeyChain,
-  createSSLKeyAndCrt,
-  createConfigFile,
-  rmDir
-}
