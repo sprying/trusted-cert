@@ -5,9 +5,9 @@ import applicationConfigPath from './config/application-config-path'
 const configDir = applicationConfigPath('trused-cert')
 const configPath = path.join.bind(path, configDir)
 
-export const run = (cmd, args, options) => execFileSync(cmd, args, options)
+// export const run = (cmd, args, options) => execFileSync(cmd, args, options)
 
-export const openssl = (args: string[], options?: any) => execFileSync('openssl', args, {
+export const openssl = (args: string[], options?: any): string => execFileSync('openssl', args, {
   ...options,
   stdio: 'pipe',
   env: Object.assign({
@@ -32,11 +32,11 @@ export const isMatched = (existedDomains: string[], addedDomains: string[]): boo
  * 获取最终需要新增的域名
  */
 export const getAdded = (existedDomain: string[], addedDomains: string[]): string[] => addedDomains.filter(host => {
-  return !existedDomain.find(crtHostItem => {
+  return existedDomain.find(crtHostItem => {
     if (crtHostItem.includes('*')) {
       return (new RegExp(crtHostItem.replace('*', '^[^.]+'))).test(host)
     } else {
       return crtHostItem === host
     }
-  })
+  }) == null
 })

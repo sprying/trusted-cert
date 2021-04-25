@@ -2,19 +2,12 @@ import { exec, execSync } from 'child_process'
 import Debug from 'debug'
 
 const debug = Debug('trusted-cert:platform:win32')
-export const addStore = (certificatePath): Promise<boolean> => new Promise((resolve, reject) => {
-  exec(`certutil -addstore -user root ${certificatePath}`, (error, stdout, stderr) => {
-    if (error) {
-      // reject(error)
-      resolve(false)
-    } else {
-      resolve(true)
-    }
-  })
-})
+export const addStore = (certificatePath: string): void => {
+  exec(`certutil -addstore -user root ${certificatePath}`)
+}
 
-export const getKeyChainCertSha1List = (CN) => {
-  let sha1List
+export const getKeyChainCertSha1List = (CN: string): string[] => {
+  let sha1List: string[]
   try {
     // 钥匙串里没有时执行下面会抛错
     const sha1Str = execSync(`certutil -verifystore -user root "${CN}" | findstr sha1`, { encoding: 'utf8' })
@@ -29,7 +22,7 @@ export const getKeyChainCertSha1List = (CN) => {
   return sha1List
 }
 
-export const removeFromStore = (certificateName) => new Promise((resolve, reject) => {
+export const removeFromStore = async (certificateName: string): Promise<boolean> => await new Promise((resolve, reject) => {
   try {
     execSync(`certutil -delstore -user root "${certificateName}"`)
     resolve(true)

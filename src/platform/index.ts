@@ -1,22 +1,22 @@
-import { 
-  addStore as addStoreViaDarwin, 
+import {
+  addStore as addStoreViaDarwin,
   getKeyChainCertSha1List as getKeyChainCertSha1ListViaDarwin,
   removeFromStore as removeFromStoreViaDarwin
 } from './darwin'
 
-import { 
-  addStore as addStoreViaWin32, 
+import {
+  addStore as addStoreViaWin32,
   getKeyChainCertSha1List as getKeyChainCertSha1ListViaWin32,
   removeFromStore as removeFromStoreViaDarwinViaWin32
 } from './win32'
 
-import { 
-  addStore as addStoreViaLinux, 
+import {
+  addStore as addStoreViaLinux
 } from './linux'
 
 const isOSX = process.platform === 'darwin'
 const isWindow = process.platform === 'win32'
-const isLinux = process.platform === 'linux'
+// const isLinux = process.platform === 'linux'
 
 /**
  * 添加到系统钥匙串，信任证书

@@ -1,3 +1,5 @@
+import { IConfiguration, IConfigurationInput } from './type'
+
 const configuration = {
   host_add_no_input: '输入要支持的host',
   host_add_no_install: '还没有安装自签名证书，运行下面命令安装使用',
@@ -9,6 +11,7 @@ const configuration = {
   host_add_success: '更新成功',
   host_add_success_support_hosts: '更新后支持的域名',
   host_add_cert_valid_period: '更新后证书的起止有效时间：',
+  host_add_trusted_suggestion: '请运行 trusted-cert trust 信任证书',
 
   info_ssl_key_path: '密钥文件路径：',
   info_ssl_cert_path: '证书文件路径：',
@@ -51,7 +54,8 @@ const configuration = {
   install_del_installed_process_creating: '正在创建证书...',
   install_inquirer_domains_with_default: '输入启动本地HTTPS服务时使用的域名，多个以,分隔，直接回车将使用默认',
   install_inquirer_domains: '输入启动本地HTTPS服务时使用的域名，多个以,分隔，如abc.com,*.abc.com',
-  install_create_key_cert_file_success: '成功创建密钥和自签名证书',
+  install_create_key_cert_file_success: '成功创建密钥和自签名证书文件',
+  install_create_key_cert_file_failure: '创建密钥和自签名证书文件失败',
   install_add_keychain_process_tip: '向系统的钥匙串里添加证书并始终信任...',
   install_add_keychain_success: '添加并信任成功，钥匙串里名称为：',
   install_add_keychain_failure: '钥匙串添加证书失败',
@@ -73,7 +77,8 @@ const configuration = {
   uninstall_complete: '删除完成'
 }
 
-export const mergeLan = (definedLan) => {
+export const mergeLan = (definedLan: IConfigurationInput): IConfiguration => {
   Object.assign(configuration, definedLan)
+  return configuration
 }
-export const getLan = () => configuration
+export const getLan = (): IConfiguration => configuration
