@@ -36,7 +36,8 @@ subjectAltName=@alt_names
 ${domains.map((item, index) => {
     return `DNS.${index + 1} = ${item}`
 }).join('\n')}
-    `.trim())
+IP.1 = 127.0.0.1
+`.trim())
 }
 
 export const createConfigFile = async (domains: string[]): Promise<void> => {
