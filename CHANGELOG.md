@@ -1,3 +1,9 @@
+# 2021-05-19
+1. certificateFor 功能扩展
+  - 支持options.silent配置
+  - 在Password: 前增加提示文案
+2. 解决域名*.fa可以匹配*.fam的问题 
+
 # 2021-05-13
 1. 默认支持ip 127.0.0.1 
 

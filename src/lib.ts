@@ -71,7 +71,7 @@ export const getCrtHosts = (): string[] => {
  */
 export const getCertValidPeriod = (): string => {
   return openssl(['x509', '-in', sslCrtPath, '-noout', '-dates'], { encoding: 'utf-8' }).trim().split('\n').map(item => {
-    return Moment(new Date(item.replace(/\w+=/, ''))).format('YYYY-MM-DD hh:mm:ss')
+    return Moment(new Date(item.replace(/\w+=/, ''))).format('YYYY-MM-DD HH:mm:ss')
   }).join(' ~ ')
 }
 /**

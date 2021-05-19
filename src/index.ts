@@ -216,48 +216,57 @@ export const addHosts: IaddHosts = async (hosts = []) => {
   }
 }
 
-type ICertificateFor = (host: string | string[]) => Promise<{ key: Buffer, cert: Buffer, keyFilePath: string, certFilePath: string, trusted: boolean }>
+function certificateFor (options?: { silent: boolean }): Promise<{ key: Buffer, cert: Buffer, keyFilePath: string, certFilePath: string, trusted: boolean }>
 
-export const certificateFor: ICertificateFor = async (hosts = defaultDomains) => {
+async function certificateFor (hosts?: string | string[] | { silent: boolean }, options?: { silent: boolean }): Promise<{ key: Buffer, cert: Buffer, keyFilePath: string, certFilePath: string, trusted: boolean }> {
+  let silent: boolean = false
+  if (!Array.isArray(hosts) && typeof hosts !== 'string') {
+    silent = hosts?.silent ?? false
+    hosts = defaultDomains
+  } else {
+    silent = options?.silent ?? false
+  }
   if (typeof hosts === 'string') hosts = [hosts]
   const existSslKeyAndCrt = hasExistedKeyAndCert()
+  if (existSslKeyAndCrt && isMatched(getCrtHosts(), hosts)) {
+    debug('之前已经添加过域名，跳过返回之前的域名')
+    let trusted: boolean
+    try {
+      isCertTrusted() || addToKeyChain(sslCrtPath)
+      trusted = true
+    } catch (error) {
+      trusted = false
+    }
+    return {
+      key: fs.readFileSync(sslKeyPath),
+      cert: fs.readFileSync(sslCrtPath),
+      keyFilePath: sslKeyPath,
+      certFilePath: sslCrtPath,
+      trusted
+    }
+  }
+
+  console.log('创建自签名证书')
+
   if (existSslKeyAndCrt) {
     const crtHosts = getCrtHosts()
-    if (isMatched(crtHosts, hosts)) {
-      debug('之前已经添加过域名，跳过返回之前的域名')
-      let trusted: boolean
-      try {
-        isCertTrusted() || addToKeyChain(sslCrtPath)
-        trusted = true
-      } catch (error) {
-        trusted = false
-      }
-      return {
-        key: fs.readFileSync(sslKeyPath),
-        cert: fs.readFileSync(sslCrtPath),
-        keyFilePath: sslKeyPath,
-        certFilePath: sslCrtPath,
-        trusted
-      }
+    const sha1List = getKeyChainCertSha1List(CN)
+    if (sha1List.length > 0) {
+      !silent && console.log(lan.api_add_hosts_update_and_trust ?? '新增域名需要更新证书并重新信任')
     } else {
-      const sha1List = getKeyChainCertSha1List(CN)
-      if (sha1List.length > 0) {
-        console.log(lan.api_add_hosts_update_and_trust ?? '新增域名需要更新证书并重新信任')
-      } else {
-        console.log(lan.api_add_hosts_update_cert ?? '新增域名需要更新证书')
-      }
-      try {
-        await delTrusted(CN)
-      } catch (error) {
-        throw new Error(lan.api_add_hosts_rm_keychain_failure ?? '卸载老的证书失败，请授权重试')
-      }
-      try {
-        await rmDir(sslCertificateDir)
-      } catch (e) {
-        throw new Error(lan.api_add_hosts_remove_cert_dir_failure ?? '删除存放原证书的目录失败，请授权重试')
-      }
-      hosts = crtHosts.concat(getAdded(crtHosts, hosts))
+      !silent && console.log(lan.api_add_hosts_update_cert ?? '新增域名需要更新证书')
     }
+    try {
+      await delTrusted(CN)
+    } catch (error) {
+      throw new Error(lan.api_add_hosts_rm_keychain_failure ?? '卸载老的证书失败，请授权重试')
+    }
+    try {
+      await rmDir(sslCertificateDir)
+    } catch (e) {
+      throw new Error(lan.api_add_hosts_remove_cert_dir_failure ?? '删除存放原证书的目录失败，请授权重试')
+    }
+    hosts = crtHosts.concat(getAdded(crtHosts, hosts))
   }
 
   await createConfigFile(hosts)
@@ -278,6 +287,7 @@ export const certificateFor: ICertificateFor = async (hosts = defaultDomains) =>
     trusted
   }
 }
+export { certificateFor }
 
 export const info = (): boolean => {
   if (!judgeExistAndPrint()) return false

@@ -54,10 +54,11 @@ program
 program
   .command('api', { noHelp: true })
   .description('调用api的示例')
-  .action(() => {
-    certificateFor(['*.fa']).then(res => {
-      console.log(res)
-    })
+  .action(async () => {
+    await certificateFor(['*.fa11'])
+    await certificateFor('*.fa21')
+    await certificateFor('*.fa31', { silent: true })
+    await certificateFor({ silent: true })
   })
 
 program.parse(process.argv)

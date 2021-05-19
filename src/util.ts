@@ -21,7 +21,7 @@ export const openssl = (args: string[], options?: any): string => execFileSync('
 export const isMatched = (existedDomains: string[], addedDomains: string[]): boolean => addedDomains.every(host => {
   return existedDomains.find(crtHostItem => {
     if (crtHostItem.includes('*')) {
-      return (new RegExp(crtHostItem.replace('*', '^[^.]+'))).test(host)
+      return (new RegExp(crtHostItem.replace('*', '^[^.]+') + '$')).test(host)
     } else {
       return crtHostItem === host
     }
@@ -34,7 +34,7 @@ export const isMatched = (existedDomains: string[], addedDomains: string[]): boo
 export const getAdded = (existedDomain: string[], addedDomains: string[]): string[] => addedDomains.filter(host => {
   return existedDomain.find(crtHostItem => {
     if (crtHostItem.includes('*')) {
-      return (new RegExp(crtHostItem.replace('*', '^[^.]+'))).test(host)
+      return (new RegExp(crtHostItem.replace('*', '^[^.]+') + '$')).test(host)
     } else {
       return crtHostItem === host
     }
