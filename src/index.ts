@@ -22,7 +22,6 @@ import { isMatched, getAdded } from './util'
 import { mergeLan, getLan } from './i18n/zh-cn'
 
 const debug = Debug('trusted-cert')
-// const isOSX = process.platform === 'darwin'
 const { sslCertificateDir, sslKeyPath, sslCrtPath, CN, defaultDomains } = getConfig()
 const lan = getLan()
 
@@ -232,7 +231,10 @@ async function certificateFor (hosts?: string | string[] | { silent: boolean }, 
     debug('之前已经添加过域名，跳过返回之前的域名')
     let trusted: boolean
     try {
-      isCertTrusted() || addToKeyChain(sslCrtPath)
+      if (!isCertTrusted()) {
+        console.log('创建自签名证书')
+        addToKeyChain(sslCrtPath)
+      }
       trusted = true
     } catch (error) {
       trusted = false

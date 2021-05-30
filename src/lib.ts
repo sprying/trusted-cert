@@ -14,7 +14,7 @@ const isWindow = process.platform === 'win32'
 
 const debug = Debug('trusted-cert:lib')
 const { sslCertificateDir, sslConfigFile, sslKeyPath, sslCrtPath, CN } = getConfig()
-const createCnfFile = (domains: string[]): void => {
+const createCnfFile = ({ domains, ips }: { domains: string[], ips: string[] }): void => {
   fs.writeFileSync(sslConfigFile, `
 [req] 
 prompt = no 
@@ -37,12 +37,17 @@ ${domains.map((item, index) => {
     return `DNS.${index + 1} = ${item}`
 }).join('\n')}
 IP.1 = 127.0.0.1
+${ips.map((item, index) => {
+    return `IP.${index + 2} = ${item}`
+}).join('\n')}
 `.trim())
 }
 
-export const createConfigFile = async (domains: string[]): Promise<void> => {
+export const createConfigFile = async (hosts: string[]): Promise<void> => {
+  const domains = hosts.filter(host => !/^\d([\d]*\.)+\d$/.test(host))
+  const ips = hosts.filter(host => /^\d([\d]*\.)+\d$/.test(host) && host !== '127.0.0.1').slice(-4)
   await fse.ensureDir(sslCertificateDir)
-  createCnfFile(domains)
+  createCnfFile({ domains, ips })
 }
 
 export const createSSLKeyAndCrt = async (): Promise<void> => await new Promise((resolve, reject) => {
@@ -60,9 +65,9 @@ export const createSSLKeyAndCrt = async (): Promise<void> => await new Promise((
  */
 export const getCrtHosts = (): string[] => {
   if (isWindow) {
-    return execSync(`openssl x509 -in ${sslCrtPath} -noout -text | findstr DNS`, { encoding: 'utf-8' }).trim().split(',').filter(item => item.includes('DNS:')).map(item => item.trim().replace(/DNS:/, ''))
+    return execSync(`openssl x509 -in ${sslCrtPath} -noout -text | findstr DNS`, { encoding: 'utf-8' }).trim().split(',').filter(item => item.includes('DNS:') || item.includes('IP Address:')).map(item => item.trim().replace(/DNS:/, '').replace('IP Address:', ''))
   } else {
-    return execSync(`openssl x509 -in '${sslCrtPath}' -noout -text | grep DNS`, { encoding: 'utf-8' }).trim().split(',').filter(item => item.includes('DNS:')).map(item => item.trim().replace(/DNS:/, ''))
+    return execSync(`openssl x509 -in '${sslCrtPath}' -noout -text | grep DNS`, { encoding: 'utf-8' }).trim().split(',').filter(item => item.includes('DNS:') || item.includes('IP Address:')).map(item => item.trim().replace(/DNS:/, '').replace('IP Address:', ''))
   }
 }
 

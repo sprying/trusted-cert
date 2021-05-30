@@ -59,6 +59,7 @@ program
     await certificateFor('*.fa21')
     await certificateFor('*.fa31', { silent: true })
     await certificateFor({ silent: true })
+    await certificateFor('127.0.0.2')
   })
 
 program.parse(process.argv)

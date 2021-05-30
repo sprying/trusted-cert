@@ -97,7 +97,7 @@ Commands:
 	const https = require('https')
 	const fs = require('fs')
 	const { certificateFor } = require('trusted-cert')
-	const hosts = ['test.m.taobao.com'] // 本地https服务要使用的domain
+	const hosts = ['test.m.taobao.com', '192.168.0.1'] // 本地https服务要使用的domain/ip
 	certificateFor(hosts).then((keyAndCert) => {
 		https.createServer(keyAndCert, (req, res) => {
 		  res.writeHead(200);
