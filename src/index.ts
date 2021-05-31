@@ -218,6 +218,9 @@ export const addHosts: IaddHosts = async (hosts = []) => {
 function certificateFor (options?: { silent: boolean }): Promise<{ key: Buffer, cert: Buffer, keyFilePath: string, certFilePath: string, trusted: boolean }>
 
 async function certificateFor (hosts?: string | string[] | { silent: boolean }, options?: { silent: boolean }): Promise<{ key: Buffer, cert: Buffer, keyFilePath: string, certFilePath: string, trusted: boolean }> {
+  if (!commandExists('openssl')) {
+    throw new Error('OpenSSL not found: OpenSSL is required to generate SSL certificates - make sure it is installed and available in your PATH')
+  }
   let silent: boolean = false
   if (!Array.isArray(hosts) && typeof hosts !== 'string') {
     silent = hosts?.silent ?? false

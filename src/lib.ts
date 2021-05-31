@@ -48,12 +48,14 @@ export const createConfigFile = async (hosts: string[]): Promise<void> => {
   const ips = hosts.filter(host => /^\d([\d]*\.)+\d$/.test(host) && host !== '127.0.0.1').slice(-4)
   await fse.ensureDir(sslCertificateDir)
   createCnfFile({ domains, ips })
+  debug('成功创建证书配置文件')
 }
 
 export const createSSLKeyAndCrt = async (): Promise<void> => await new Promise((resolve, reject) => {
   try {
     openssl(['req', '-new', '-newkey', 'rsa:2048', '-sha1', '-days', '3650',
       '-nodes', '-x509', '-keyout', sslKeyPath, '-out', sslCrtPath, '-config', sslConfigFile])
+    debug('成功创建密钥和证书文件')
     resolve()
   } catch (e) {
     reject(e)
