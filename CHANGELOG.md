@@ -1,3 +1,6 @@
+#2021-06-01
+1. openssl命令不存在时，使用node-forge生成证书，window电脑可能没安装openssl
+
 #2021-05-31
 1. certificateFor api 新增检测openssl是否存在
 

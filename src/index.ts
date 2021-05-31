@@ -8,6 +8,7 @@ import {
   getCrtHosts,
   createConfigFile,
   createSSLKeyAndCrt,
+  createSSLKeyAndCrtV2,
   getCertValidPeriod,
   getCertSha1,
   isCertTrusted,
@@ -62,9 +63,6 @@ const getInquirerAnswer = async (): Promise<string[]> => {
 }
 
 export const install = async (): Promise<boolean> => {
-  if (!commandExists('openssl')) {
-    throw new Error('OpenSSL not found: OpenSSL is required to generate SSL certificates - make sure it is installed and available in your PATH')
-  }
   const sha1List = getKeyChainCertSha1List(CN)
   const existCrtDir = fs.existsSync(sslCertificateDir)
   if (sha1List.length !== 0 || existCrtDir) {
@@ -81,8 +79,12 @@ export const install = async (): Promise<boolean> => {
   }
   const domains = await getInquirerAnswer()
   try {
-    await createConfigFile(domains)
-    await createSSLKeyAndCrt()
+    if (process.env.NO_OPENSSL === 'true' || !commandExists('openssl')) {
+      await createSSLKeyAndCrtV2(domains)
+    } else {
+      await createConfigFile(domains)
+      await createSSLKeyAndCrt()
+    }
     console.log(lan.install_create_key_cert_file_success ?? '成功创建密钥和自签名证书文件')
   } catch (e) {
     console.log(lan.install_create_key_cert_file_failure ?? '创建密钥和自签名证书文件失败')
@@ -218,9 +220,6 @@ export const addHosts: IaddHosts = async (hosts = []) => {
 function certificateFor (options?: { silent: boolean }): Promise<{ key: Buffer, cert: Buffer, keyFilePath: string, certFilePath: string, trusted: boolean }>
 
 async function certificateFor (hosts?: string | string[] | { silent: boolean }, options?: { silent: boolean }): Promise<{ key: Buffer, cert: Buffer, keyFilePath: string, certFilePath: string, trusted: boolean }> {
-  if (!commandExists('openssl')) {
-    throw new Error('OpenSSL not found: OpenSSL is required to generate SSL certificates - make sure it is installed and available in your PATH')
-  }
   let silent: boolean = false
   if (!Array.isArray(hosts) && typeof hosts !== 'string') {
     silent = hosts?.silent ?? false
@@ -274,8 +273,12 @@ async function certificateFor (hosts?: string | string[] | { silent: boolean }, 
     hosts = crtHosts.concat(getAdded(crtHosts, hosts))
   }
 
-  await createConfigFile(hosts)
-  await createSSLKeyAndCrt()
+  if (process.env.NO_OPENSSL === 'true' || !commandExists('openssl')) {
+    await createSSLKeyAndCrtV2(hosts)
+  } else {
+    await createConfigFile(hosts)
+    await createSSLKeyAndCrt()
+  }
 
   let trusted: boolean
   try {
