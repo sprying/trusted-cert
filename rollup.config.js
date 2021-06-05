@@ -14,7 +14,7 @@ const isProd = process.env.NODE_ENV === 'production'
 
 export default {
   input: './src/index.ts',
-  external: ['fs', 'path', 'child_process', 'through', 'os', 'chalk', 'lodash', 'rxjs', 'debug', 'inquirer', 'commander', 'command-exists', 'fs-extra', 'rimraf', 'moment'],
+  external: ['fs', 'path', 'child_process', 'through', 'os', 'chalk', 'lodash', 'rxjs', 'debug', 'inquirer', 'commander', 'command-exists', 'fs-extra', 'rimraf', 'moment', 'util', 'node-forge'],
   output: [{
     file: './dist/index.js',
     format: 'cjs',

@@ -1,3 +1,6 @@
+#2021-06-03
+1. 依赖的random-int从3.x降到2.x版本，因为3.x只支持node 12版本以上
+
 #2021-06-01
 1. openssl命令不存在时，使用node-forge生成证书，window电脑可能没安装openssl
 
