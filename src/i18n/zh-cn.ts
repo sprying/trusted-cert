@@ -52,8 +52,8 @@ const configuration = {
 
   install_has_installed_delete_tip: '继续操作会覆盖该工具已创建的证书',
   install_del_installed_process_creating: '正在创建证书...',
-  install_inquirer_domains_with_default: '输入启动本地HTTPS服务时使用的域名，多个以,分隔，直接回车将使用默认',
-  install_inquirer_domains: '输入启动本地HTTPS服务时使用的域名，多个以,分隔，如abc.com,*.abc.com',
+  install_inquirer_domains_with_default: '输入要支持的域名或者IP，多个以,分隔，直接回车将使用默认',
+  install_inquirer_domains: '输入要支持的域名或者IP，多个以,分隔，如abc.com,*.abc.com',
   install_create_key_cert_file_success: '成功创建密钥和自签名证书文件',
   install_create_key_cert_file_failure: '创建密钥和自签名证书文件失败',
   install_add_keychain_process_tip: '向系统的钥匙串里添加证书并始终信任...',
