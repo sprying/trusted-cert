@@ -1054,13 +1054,6 @@
   resolved "https://registry.npmjs.org/@types/minimatch/-/minimatch-3.0.4.tgz#f0ec25dbf2f0e4b18647313ac031134ca5b24b21"
   integrity sha512-1z8k4wzFnNjVK/tlxvrWuK5WMt6mydWWP7+zvH5eFep4oj+UkrfiJTRtjCeBXNpwaA/FYqqtb4/QS4ianFpIRA==
 
-"@types/node-forge@^0.9.9":
-  version "0.9.9"
-  resolved "https://registry.npmjs.org/@types/node-forge/-/node-forge-0.9.9.tgz#8285475c2cd21a7a7d4ecc8b12ae10b25e4332ce"
-  integrity sha512-FGpCELyl77XeHhYcRtmx/bYqVLRRgNE9JbUTyg6iM6izgp8Gjw7hWjVNVE+Uu6Q41Yo0nsUvKA3rZmnLQuTcCg==
-  dependencies:
-    "@types/node" "*"
-
 "@types/node@*":
   version "14.14.41"
   resolved "https://registry.npmjs.org/@types/node/-/node-14.14.41.tgz#d0b939d94c1d7bd53d04824af45f1139b8c45615"
@@ -2543,14 +2536,7 @@ get-stream@^5.1.0:
   dependencies:
     pump "^3.0.0"
 
-glob-parent@^5.0.0:
-  version "5.1.1"
-  resolved "https://registry.npm.alibaba-inc.com/glob-parent/download/glob-parent-5.1.1.tgz#b6c1ef417c4e5663ea498f1c45afac6916bbc229"
-  integrity sha1-tsHvQXxOVmPqSY8cRa+saRa7wik=
-  dependencies:
-    is-glob "^4.0.1"
-
-glob-parent@^5.1.0, glob-parent@~5.1.0:
+glob-parent@^5.0.0, glob-parent@^5.1.0, glob-parent@~5.1.0:
   version "5.1.2"
   resolved "https://registry.npmjs.org/glob-parent/-/glob-parent-5.1.2.tgz#869832c58034fe68a4093c17dc15e8340d8401c4"
   integrity sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==
@@ -2876,7 +2862,7 @@ is-date-object@^1.0.1:
 
 is-extglob@^2.1.1:
   version "2.1.1"
-  resolved "https://registry.npmjs.org/is-extglob/-/is-extglob-2.1.1.tgz#a88c02535791f02ed37c76a1b9ea9773c833f8c2"
+  resolved "https://registry.yarnpkg.com/is-extglob/-/is-extglob-2.1.1.tgz#a88c02535791f02ed37c76a1b9ea9773c833f8c2"
   integrity sha1-qIwCU1eR8C7TfHahueqXc8gz+MI=
 
 is-fullwidth-code-point@^2.0.0:
@@ -2896,7 +2882,7 @@ is-generator-function@^1.0.7:
 
 is-glob@^4.0.0, is-glob@^4.0.1, is-glob@~4.0.1:
   version "4.0.1"
-  resolved "https://registry.npmjs.org/is-glob/-/is-glob-4.0.1.tgz#7567dbe9f2f5e2467bc77ab83c4a29482407a5dc"
+  resolved "https://registry.yarnpkg.com/is-glob/-/is-glob-4.0.1.tgz#7567dbe9f2f5e2467bc77ab83c4a29482407a5dc"
   integrity sha512-5G0tKtBTFImOqDnLB2hG6Bp2qcKEFduo4tZu9MT/H6NQv/ghhy30o55ufafxJ/LdH79LLs2Kfrn85TLKyA7BUg==
   dependencies:
     is-extglob "^2.1.1"
@@ -3848,10 +3834,10 @@ queue-microtask@^1.2.2:
   resolved "https://registry.npmjs.org/queue-microtask/-/queue-microtask-1.2.3.tgz#4929228bbc724dfac43e0efb058caf7b6cfb6243"
   integrity sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==
 
-random-int@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.npmjs.org/random-int/-/random-int-3.0.0.tgz#69782559c9306c43de1dd174ea616330ef75b749"
-  integrity sha512-QvewnOwigesW2WFyTHiQzR6XUUcSQO/BqmfgRz5N5GpGrKQnTf7ebMz8UtuwaET8IfO1n0wLx8/fHsI8E0Jpow==
+random-int@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/random-int/-/random-int-2.0.1.tgz#d072fe298e2fd12a730edde7729168b7b88dcea3"
+  integrity sha512-YALjWK2Rt9EMIv9BF/3mvlzFWQathsvb5UZmN1QmhfIOfcQYXc/UcLzg0ablqesSBpBVLt2Tlwv/eTuBh4LXUQ==
 
 randombytes@^2.1.0:
   version "2.1.0"
