@@ -1,4 +1,4 @@
-import { I18nDict } from './interface'
+import { I18nDict } from './interface';
 
 export const zhCN: I18nDict = {
   host_add_no_input: '输入要支持的host',
@@ -20,7 +20,8 @@ export const zhCN: I18nDict = {
   info_ssl_cert_trusted_desc: '自签名证书已经添加到钥匙串并被始终信任',
   info_keychains_cert_name: '在钥匙串里的名称：',
   info_keychains_cert_sha1: 'sha-1：',
-  info_ssl_cert_not_trusted: '自签名证书还没被添加到钥匙串，可以运行下面命令，执行添加和始终信任',
+  info_ssl_cert_not_trusted:
+    '自签名证书还没被添加到钥匙串，可以运行下面命令，执行添加和始终信任',
   info_ssl_cert_trusted_cli_tip: '$ trusted-cert trust',
   info_extra_help: [
     '',
@@ -32,7 +33,7 @@ export const zhCN: I18nDict = {
     '配置nginx的HTTPS证书示例',
     'https://github.com/sprying/trusted-cert#nginx',
     '配置nodejs的HTTPS证书示例',
-    'https://github.com/sprying/trusted-cert#nodejs'
+    'https://github.com/sprying/trusted-cert#nodejs',
   ],
 
   add_trust_repeat_add_tip: '钥匙串里已经添加过，无须重复添加',
@@ -46,13 +47,16 @@ export const zhCN: I18nDict = {
   api_add_hosts_update_and_trust: '新增域名需要更新证书并重新信任',
   api_add_hosts_update_cert: '新增域名需要更新证书',
   api_add_hosts_rm_keychain_failure: '卸载老的证书失败，请授权重试',
-  api_add_hosts_update_default: '自签名证书要新增支持的域名，正在更新自签名证书',
+  api_add_hosts_update_default:
+    '自签名证书要新增支持的域名，正在更新自签名证书',
   api_add_hosts_remove_cert_dir_failure: '删除存放原证书的目录失败，请授权重试',
 
   install_has_installed_delete_tip: '继续操作会覆盖该工具已创建的证书',
   install_del_installed_process_creating: '正在创建证书...',
-  install_inquirer_domains_with_default: '输入要支持的域名或者IP，多个以,分隔，直接回车将使用默认',
-  install_inquirer_domains: '输入要支持的域名或者IP，多个以,分隔，如abc.com,*.abc.com',
+  install_inquirer_domains_with_default:
+    '输入要支持的域名或者IP，多个以,分隔，直接回车将使用默认',
+  install_inquirer_domains:
+    '输入要支持的域名或者IP，多个以,分隔，如abc.com,*.abc.com',
   install_create_key_cert_file_success: '成功创建密钥和自签名证书文件',
   install_create_key_cert_file_failure: '创建密钥和自签名证书文件失败',
   install_add_keychain_process_tip: '向系统的钥匙串里添加证书并始终信任...',
@@ -64,7 +68,7 @@ export const zhCN: I18nDict = {
     '可随时通过下面命令查看自签名证书信息',
     '$ trusted-cert',
     '',
-    '安装证书的结果：'
+    '安装证书的结果：',
   ],
 
   uninstall_unfound: '还没有安装过证书',
@@ -73,5 +77,5 @@ export const zhCN: I18nDict = {
   uninstall_del_keychain_failure: '删除失败，流程结束',
   uninstall_rm_dir_success: '已经删除存放密钥和证书的目录%s',
   uninstall_rm_dir_failure: '删除存放原证书的目录失败，流程结束',
-  uninstall_complete: '删除完成'
-}
+  uninstall_complete: '删除完成',
+};
