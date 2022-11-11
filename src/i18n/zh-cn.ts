@@ -1,6 +1,6 @@
-import { IConfiguration, IConfigurationInput } from './type'
+import { I18nDict } from './interface'
 
-const configuration = {
+export const zhCN: I18nDict = {
   host_add_no_input: '输入要支持的host',
   host_add_no_install: '还没有安装自签名证书，运行下面命令安装使用',
   host_add_no_install_operation_tip: '$ trusted-cert install',
@@ -32,8 +32,7 @@ const configuration = {
     '配置nginx的HTTPS证书示例',
     'https://github.com/sprying/trusted-cert#nginx',
     '配置nodejs的HTTPS证书示例',
-    'https://github.com/sprying/trusted-cert#nodejs',
-    '如有疑问联系@慧知'
+    'https://github.com/sprying/trusted-cert#nodejs'
   ],
 
   add_trust_repeat_add_tip: '钥匙串里已经添加过，无须重复添加',
@@ -76,9 +75,3 @@ const configuration = {
   uninstall_rm_dir_failure: '删除存放原证书的目录失败，流程结束',
   uninstall_complete: '删除完成'
 }
-
-export const mergeLan = (definedLan: IConfigurationInput): IConfiguration => {
-  Object.assign(configuration, definedLan)
-  return configuration
-}
-export const getLan = (): IConfiguration => configuration
