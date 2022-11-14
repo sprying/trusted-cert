@@ -101,7 +101,9 @@ export function createCert({
   hosts: string[];
   expiresIn?: number;
 }) {
-  const attributes = [{ name: 'commonName', value: hosts[0] }];
+  const domainIndex = hosts.findIndex((host) => !isIp(host));
+  const cn = domainIndex === -1 ? 'localhost' : hosts[domainIndex];
+  const attributes = [{ name: 'commonName', value: cn }];
 
   // required certificate extensions for a certificate authority
   const extensions: any[] = [
@@ -114,14 +116,22 @@ export function createCert({
     { name: 'extKeyUsage', serverAuth: true, clientAuth: true },
   ];
 
-  if (hosts.length > 1) {
+  const types = { domain: 2, ip: 7 }; // available Types: https://git.io/fptng
+  const altNames: any[] = [];
+  hosts.forEach((host, i) => {
+    if (i === domainIndex) return;
+
+    if (isIp(host)) {
+      altNames.push({ type: types.ip, ip: host });
+    } else {
+      altNames.push({ type: types.domain, value: host });
+    }
+  });
+
+  if (altNames.length) {
     extensions.push({
       name: 'subjectAltName',
-      altNames: hosts.slice(1).map((domain) => {
-        const types = { domain: 2, ip: 7 }; // available Types: https://git.io/fptng
-        if (isIp(domain)) return { type: types.ip, ip: domain };
-        return { type: types.domain, value: domain };
-      }),
+      altNames,
     });
   }
 
