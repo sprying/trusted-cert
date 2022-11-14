@@ -165,7 +165,7 @@ export const getCertHosts = (cert: pki.Certificate): string[] => {
  * 获取缓存的证书文件里的sha1值
  */
 export const getCertSha1 = (cert: pki.Certificate): string => {
-  const bytes = asn1.toDer(pki.certificateToAsn1(cert)).getBytes()
+  const bytes = asn1.toDer(pki.certificateToAsn1(cert)).getBytes();
   return md.sha1.create().update(bytes).digest().toHex().toUpperCase();
 };
 
