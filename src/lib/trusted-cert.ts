@@ -18,9 +18,10 @@ import {
   getKeyChainCertSha1List,
 } from '../platform';
 import applicationConfigPath from './application-config-path';
-import { I18nDict } from '../i18n/interface';
+import { I18nDict, I18nDictModifier } from '../i18n/interface';
 import { mergeI18n } from '../i18n';
 import { getAdded, isMatched } from './util';
+import { format } from 'util';
 
 const debug = Debug('trusted-cert:class');
 
@@ -55,6 +56,7 @@ export class TrustedCert {
   private dir: string;
   private caName: string;
   private sslName: string;
+  private quiet: boolean;
 
   private i18n: I18nDict;
 
@@ -62,16 +64,19 @@ export class TrustedCert {
     dir = applicationConfigPath('trusted-cert'),
     caName = 'ca',
     sslName = 'ssl',
+    quiet = false,
     i18n = {},
   }: {
     dir?: string;
     caName?: string;
     sslName?: string;
-    i18n?: Partial<I18nDict>;
+    quiet?: boolean;
+    i18n?: I18nDictModifier;
   } = {}) {
     this.dir = dir;
     this.caName = caName;
     this.sslName = sslName;
+    this.quiet = quiet;
 
     this.i18n = mergeI18n(i18n);
   }
@@ -103,18 +108,13 @@ export class TrustedCert {
     if (ca) {
       if (this.isCertTrusted(ca.cert)) {
         const cn = getCertCommonName(ca.cert);
-        console.log(
-          this.i18n.uninstall_del_keychain ??
-            '正在删除钥匙串里名称「%s」的证书',
-          cn
-        );
+        this.log(this.l('uninstall_del_keychain', cn));
+
         try {
           await delTrusted(cn);
-          console.log(this.i18n.uninstall_del_keychain_success ?? '删除成功');
-        } catch (error) {
-          console.error(
-            this.i18n.uninstall_del_keychain_failure ?? '删除失败，流程结束'
-          );
+          this.log(this.l('uninstall_del_keychain_success'));
+        } catch (e: any) {
+          console.error(this.l('uninstall_del_keychain_failure', e.message));
           return false;
         }
       }
@@ -130,7 +130,7 @@ export class TrustedCert {
       keyPath(this.dir, this.sslName),
     ]);
 
-    console.log(this.i18n.uninstall_complete ?? '删除完成');
+    this.log(this.l('uninstall_complete'));
   }
 
   async sign({
@@ -151,12 +151,12 @@ export class TrustedCert {
     if (!overwrite && ssl) {
       const signedByCA = isCertSignedByCA(ssl.cert, ca.cert);
       if (!signedByCA) {
-        console.log('当前证书不由本地的 CA 签署，需要重新签署证书');
+        this.log(this.l('sign_ca_mismatch'));
       }
 
       const currentHosts = getCertHosts(ssl.cert);
       if (signedByCA && isMatched(currentHosts, hosts)) {
-        console.log('现有证书已经满足需求');
+        this.log(this.l('sign_cert_satisfied'));
         return;
       }
 
@@ -184,6 +184,7 @@ export class TrustedCert {
     });
 
     writeCert(this.dir, this.sslName, cert);
+    this.log(this.l('sign_complete'));
 
     return {
       key: pki.privateKeyToPem(privateKey),
@@ -201,85 +202,53 @@ export class TrustedCert {
   info() {
     const ssl = this.loadSSL();
     if (!ssl) {
-      return this.printNoInstall();
+      this.log(this.l('info_no_install'));
+      return;
     }
 
     const validity = getCertValidPeriod(ssl.cert);
     const crtHosts = getCertHosts(ssl.cert);
 
-    console.log(
-      this.i18n.info_ssl_key_path ?? '密钥文件路径：',
-      keyPath(this.dir, this.sslName)
-    );
-    console.log(
-      this.i18n.info_ssl_cert_path ?? '自签名证书文件路径：',
-      certPath(this.dir, this.sslName)
-    );
-    console.log(
-      this.i18n.info_ssl_cert_support_hosts ?? '自签名证书已经支持的域名：',
-      crtHosts.join(',')
-    );
-    console.log(
-      this.i18n.info_ssl_cert_valid_period ?? '自签名证书的有效时间：',
-      validity
-    );
+    this.log(this.l('info_ssl_key_path', keyPath(this.dir, this.sslName)));
+    this.log(this.l('info_ssl_cert_path', certPath(this.dir, this.sslName)));
+    this.log(this.l('info_ssl_cert_valid_period', validity));
+    this.log(this.l('info_ssl_cert_support_hosts', crtHosts.join(', ')));
   }
 
   caInfo() {
     const ca = this.loadCA();
     if (!ca) {
-      console.log('CA 证书未安装');
+      this.log(this.l('ca_not_created'));
       return;
     }
 
+    const sha1 = getCertSha1(ca.cert);
+    const validity = getCertValidPeriod(ca.cert);
+    const cn = getCertCommonName(ca.cert);
+
+    this.log(this.l('ca_info_name', cn));
+    this.log(this.l('ca_info_fingerprint', sha1));
+    this.log(this.l('ca_info_valid_period', validity));
+
+    this.log('');
+
     if (this.isCertTrusted(ca.cert)) {
-      const sha1 = getCertSha1(ca.cert);
-      const validity = getCertValidPeriod(ca.cert);
-      const cn = getCertCommonName(ca.cert);
-
-      console.log(
-        this.i18n.info_ssl_cert_trusted_desc ??
-          '自签名证书已经添加到钥匙串并被始终信任'
-      );
-      console.log(
-        this.i18n.info_keychains_cert_name ?? '自签名证书在钥匙串里的名称：',
-        cn,
-        ', ',
-        this.i18n.info_keychains_cert_sha1 ?? '自签名证书在钥匙串里的sha-1：',
-        sha1
-      );
-      console.log(
-        this.i18n.info_ssl_cert_valid_period ?? '自签名证书的有效时间：',
-        validity
-      );
+      this.log(this.l('ca_info_trusted'));
     } else {
-      console.log(
-        this.i18n.info_ssl_cert_not_trusted ??
-          '自签名证书还没被添加到钥匙串，可以运行下面命令，执行添加和始终信任'
-      );
-      console.log(
-        this.i18n.info_ssl_cert_trusted_cli_tip ?? '$ trusted-cert trust'
-      );
+      this.log(this.l('ca_info_not_trusted'));
     }
-  }
-
-  /**
-   * 判断没安装过证书给提示
-   */
-  private async printNoInstall() {
-    console.warn(this.i18n.host_add_no_install);
-    console.warn(this.i18n.host_add_no_install_operation_tip);
   }
 
   private async trust(ca: CertAndKey) {
     let trusted = false;
     if (!this.isCertTrusted(ca.cert)) {
-      console.log('正在将 CA 证书写入系统信任区');
+      this.log(this.l('add_trust_process'));
       try {
         addToKeyChain(certPath(this.dir, this.caName));
         trusted = true;
-      } catch (e) {
-        console.warn('CA 写入失败');
+        this.log(this.l('add_trust_succeed'));
+      } catch (e: any) {
+        console.warn(this.l('add_trust_failed', e.message));
         trusted = false;
       }
     }
@@ -331,8 +300,8 @@ export class TrustedCert {
 
       writeCert(this.dir, this.caName, cert);
       writeKey(this.dir, this.caName, key);
-    } catch (e) {
-      throw new Error('Failed creating CA cert');
+    } catch (e: any) {
+      throw new Error(this.l('ca_create_failed', e.message));
     }
 
     return { cert, key };
@@ -347,5 +316,19 @@ export class TrustedCert {
     debug(`证书文件的sha1 ${sha1}`);
 
     return list.includes(sha1);
+  }
+
+  private l(key: keyof I18nDict, ...args: any[]) {
+    const content = this.i18n[key];
+    if (args.length) {
+      return format(content, ...args);
+    }
+
+    return content;
+  }
+
+  private log(message: string) {
+    if (this.quiet) return;
+    this.log(message);
   }
 }

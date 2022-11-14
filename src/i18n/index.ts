@@ -1,7 +1,7 @@
-import { I18nDict } from './interface';
+import { I18nDict, I18nDictModifier } from './interface';
 import { zhCN } from './zh-cn';
 
-export function mergeI18n(input: Partial<I18nDict>): I18nDict {
+export function mergeI18n(input: I18nDictModifier): I18nDict {
   return {
     ...zhCN,
     ...input,
