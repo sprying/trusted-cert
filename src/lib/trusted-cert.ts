@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'fs-extra';
+import { readFileSync, rm, rmSync, writeFileSync } from 'fs-extra';
 import { pki } from 'node-forge';
 import { join } from 'path';
 import {
@@ -11,7 +11,11 @@ import {
   getCertValidPeriod,
 } from './cert';
 import Debug from 'debug';
-import { addToKeyChain, getKeyChainCertSha1List } from '../platform';
+import {
+  addToKeyChain,
+  delTrusted,
+  getKeyChainCertSha1List,
+} from '../platform';
 import applicationConfigPath from './application-config-path';
 import { I18nDict } from '../i18n/interface';
 import { mergeI18n } from '../i18n';
@@ -37,6 +41,9 @@ const writeCert = (dir: string, name: string, content: pki.Certificate) => {
 const writeKey = (dir: string, name: string, content: pki.PrivateKey) => {
   writeFileSync(keyPath(dir, name), pki.privateKeyToPem(content));
 };
+
+const rmAll = (files: string[]) =>
+  Promise.all(files.map((file) => rm(file).catch(() => {})));
 
 interface CertAndKey {
   cert: pki.Certificate;
@@ -90,6 +97,39 @@ export class TrustedCert {
     };
   }
 
+  async uninstall() {
+    const ca = this.loadCA();
+    if (ca) {
+      if (this.isCertTrusted(ca.cert)) {
+        const cn = getCertCommonName(ca.cert);
+        console.log(
+          this.i18n.uninstall_del_keychain ??
+            '正在删除钥匙串里名称「%s」的证书',
+          cn
+        );
+        try {
+          await delTrusted(cn);
+          console.log(this.i18n.uninstall_del_keychain_success ?? '删除成功');
+        } catch (error) {
+          console.error(
+            this.i18n.uninstall_del_keychain_failure ?? '删除失败，流程结束'
+          );
+          return false;
+        }
+      }
+
+      await rmAll([
+        certPath(this.dir, this.caName),
+        keyPath(this.dir, this.caName),
+      ]);
+    }
+
+    await rmAll([
+      certPath(this.dir, this.sslName),
+      keyPath(this.dir, this.sslName),
+    ]);
+  }
+
   async sign({
     ca,
     hosts,
@@ -103,7 +143,7 @@ export class TrustedCert {
       ca = await this.ensureCA();
     }
 
-    let ssl = this.loadCert();
+    let ssl = this.loadSSL();
     let signHosts = [...hosts];
     if (!overwrite && ssl) {
       const currentHosts = getCertHosts(ssl.cert);
@@ -162,7 +202,7 @@ export class TrustedCert {
   }
 
   async info() {
-    const ssl = this.loadCert();
+    const ssl = this.loadSSL();
     if (!ssl) {
       return this.printNoInstall();
     }
@@ -236,10 +276,10 @@ export class TrustedCert {
     return generateKeyPair({ bits: 2048, workers: 4 });
   }
 
-  private loadCert(): CertAndKey | null {
+  private loadCertAndKey(name: string): CertAndKey | null {
     try {
-      const cert = readCert(this.dir, this.sslName);
-      const key = readKey(this.dir, this.sslName);
+      const cert = readCert(this.dir, name);
+      const key = readKey(this.dir, name);
 
       return { cert, key };
     } catch (e: any) {
@@ -251,29 +291,33 @@ export class TrustedCert {
     }
   }
 
-  private async ensureCA() {
+  private loadSSL(): CertAndKey | null {
+    return this.loadCertAndKey(this.sslName);
+  }
+
+  private loadCA(): CertAndKey | null {
+    return this.loadCertAndKey(this.caName);
+  }
+
+  private async ensureCA(): Promise<CertAndKey> {
+    const ca = this.loadCA();
+    if (ca) {
+      return ca;
+    }
+
     let cert: pki.Certificate;
     let key: pki.PrivateKey;
 
     try {
-      cert = readCert(this.dir, this.caName);
-      key = readKey(this.dir, this.caName);
-    } catch (e: any) {
-      if (e.code !== 'ENOENT') {
-        throw e;
-      }
+      const keyPair = await this.generateKeyPair();
 
-      try {
-        const keyPair = await this.generateKeyPair();
+      cert = createCACert(keyPair);
+      key = keyPair.privateKey;
 
-        cert = createCACert(keyPair);
-        key = keyPair.privateKey;
-
-        writeCert(this.dir, this.caName, cert);
-        writeKey(this.dir, this.caName, key);
-      } catch (e) {
-        throw new Error('Failed creating CA cert');
-      }
+      writeCert(this.dir, this.caName, cert);
+      writeKey(this.dir, this.caName, key);
+    } catch (e) {
+      throw new Error('Failed creating CA cert');
     }
 
     return { cert, key };
