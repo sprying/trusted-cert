@@ -84,6 +84,8 @@ export const createCACert = (keys: pki.KeyPair) =>
         cA: true,
       },
     ],
+    // 10 years
+    expiresIn: 3650 * 86400e3,
   });
 
 export function createCert({
