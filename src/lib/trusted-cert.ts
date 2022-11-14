@@ -1,4 +1,4 @@
-import { readFileSync, rm, rmSync, writeFileSync } from 'fs-extra';
+import { readFileSync, rm, writeFileSync } from 'fs-extra';
 import { pki } from 'node-forge';
 import { join } from 'path';
 import {
@@ -128,6 +128,8 @@ export class TrustedCert {
       certPath(this.dir, this.sslName),
       keyPath(this.dir, this.sslName),
     ]);
+
+    console.log(this.i18n.uninstall_complete ?? '删除完成');
   }
 
   async sign({
@@ -185,23 +187,12 @@ export class TrustedCert {
     };
   }
 
-  async trust(ca: CertAndKey) {
-    let trusted = false;
-    if (!this.isCertTrusted(ca.cert)) {
-      console.log('正在将 CA 证书写入系统信任区');
-      try {
-        addToKeyChain(certPath(this.dir, this.caName));
-        trusted = true;
-      } catch (e) {
-        console.warn('CA 写入失败');
-        trusted = false;
-      }
-    }
-
-    return trusted;
+  async doTrust() {
+    const ca = await this.ensureCA();
+    return this.trust(ca);
   }
 
-  async info() {
+  info() {
     const ssl = this.loadSSL();
     if (!ssl) {
       return this.printNoInstall();
@@ -226,12 +217,14 @@ export class TrustedCert {
       this.i18n.info_ssl_cert_valid_period ?? '自签名证书的有效时间：',
       validity
     );
-
-    this.caInfo();
   }
 
-  async caInfo() {
-    const ca = await this.ensureCA();
+  caInfo() {
+    const ca = this.loadCA();
+    if (!ca) {
+      console.log('CA 证书未安装');
+      return;
+    }
 
     if (this.isCertTrusted(ca.cert)) {
       const sha1 = getCertSha1(ca.cert);
@@ -270,6 +263,22 @@ export class TrustedCert {
   private async printNoInstall() {
     console.warn(this.i18n.host_add_no_install);
     console.warn(this.i18n.host_add_no_install_operation_tip);
+  }
+
+  private async trust(ca: CertAndKey) {
+    let trusted = false;
+    if (!this.isCertTrusted(ca.cert)) {
+      console.log('正在将 CA 证书写入系统信任区');
+      try {
+        addToKeyChain(certPath(this.dir, this.caName));
+        trusted = true;
+      } catch (e) {
+        console.warn('CA 写入失败');
+        trusted = false;
+      }
+    }
+
+    return trusted;
   }
 
   private generateKeyPair() {
