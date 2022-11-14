@@ -49,11 +49,11 @@ export class TrustedCert {
   }
 
   async install({ 
-    domains, 
+    hosts, 
     overwrite = false,
     name = defaultCert,
   }: {
-    domains: string[],
+    hosts: string[],
     name?: string,
     overwrite?: boolean,
   }) {
@@ -62,7 +62,7 @@ export class TrustedCert {
 
     const certInfo = await this.sign({
       ca,
-      domains,
+      hosts,
       overwrite,
       name,
     });
@@ -75,12 +75,12 @@ export class TrustedCert {
 
   async sign({
     ca,
-    domains,
+    hosts,
     overwrite = false,
     name = defaultCert,
   }: {
     ca?: CertAndKey;
-    domains: string[],
+    hosts: string[],
     name?: string,
     overwrite?: boolean,
   }) {
@@ -89,16 +89,16 @@ export class TrustedCert {
     }
 
     let ssl = this.loadCert(name);
-    let signDomains = [...domains];
+    let signHosts = [...hosts];
     if (!overwrite && ssl) {
-      const currentDomains = getCertHosts(ssl.cert);
-      if (isMatched(currentDomains, domains)) {
+      const currentHosts = getCertHosts(ssl.cert);
+      if (isMatched(currentHosts, hosts)) {
         console.log('现有证书已经满足需求');
         return
       }
 
-      const addDomains = getAdded(currentDomains, signDomains);
-      signDomains = [...currentDomains, ...addDomains];
+      const addHosts = getAdded(currentHosts, signHosts);
+      signHosts = [...currentHosts, ...addHosts];
     }
 
     let privateKey = ssl?.key;
@@ -117,7 +117,7 @@ export class TrustedCert {
       caPrivKey: ca.key,
       caCertAttrs: ca.cert.subject.attributes,
       publicKey,
-      hosts: Array.from(signDomains),
+      hosts: Array.from(signHosts),
     })
 
     writeCert(this.dir, name, cert);
@@ -216,24 +216,24 @@ export class TrustedCert {
    * cli交互方式获取支持的域名
    */
   private async getInquirerAnswer(): Promise<string[]> {
-    const defaultDomains = ['localhost', '127.0.0.1'];
-    const { domains } = await inquirer.prompt<{ domains: string }>([
+    const defaultHosts = ['localhost', '127.0.0.1'];
+    const { hosts } = await inquirer.prompt<{ hosts: string }>([
       {
         type: 'input',
-        name: 'domains',
+        name: 'hosts',
         message: this.i18n.install_inquirer_domains_with_default,
-        default: defaultDomains.join(','),
+        default: defaultHosts.join(','),
       },
     ]);
 
-    if (domains === '') {
-      return defaultDomains;
+    if (hosts === '') {
+      return defaultHosts;
     } else {
-      const domainList = domains
+      const hostList = hosts
         .split(',')
         .map((item) => item.trim())
         .filter(Boolean);
-      return Array.from(new Set(domainList));
+      return Array.from(new Set(hostList));
     }
   }
 
