@@ -3,10 +3,11 @@ import resolve from '@rollup/plugin-node-resolve'
 import babel from 'rollup-plugin-babel'
 import { terser } from 'rollup-plugin-terser'
 import commonjs from '@rollup/plugin-commonjs'
-import { name, version, author } from './package.json'
+import { name, version } from './package.json'
 
 const banner = `${'/*!\n' + ' * '}${name}.js v${version}\n` +
-` * (c) 2020-${new Date().getFullYear()} ${author}\n` +
+` * (c) 2020-2021 sprying\n` +
+` * (c) 2022 zhyupe\n` +
 ' * Released under the MIT License.\n' +
 ' */'
 
