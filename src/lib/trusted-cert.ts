@@ -157,7 +157,12 @@ export class TrustedCert {
       const currentHosts = getCertHosts(ssl.cert);
       if (signedByCA && isMatched(currentHosts, hosts)) {
         this.log(this.l('sign_cert_satisfied'));
-        return;
+        return {
+          key: pki.privateKeyToPem(ssl.key),
+          cert: pki.certificateToPem(ssl.cert),
+          keyFilePath: keyPath(this.dir, this.sslName),
+          certFilePath: certPath(this.dir, this.sslName),
+        };
       }
 
       const addHosts = getAdded(currentHosts, signHosts);
