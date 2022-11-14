@@ -139,9 +139,7 @@ export function createCert({
  * 获取证书里支持的域名
  */
 export const getCertHosts = (cert: pki.Certificate): string[] => {
-  const result: string[] = [
-    getCertCommonName(cert)
-  ];
+  const result: string[] = [getCertCommonName(cert)];
   const subjectAltName = cert.getExtension('subjectAltName') as
     | {
         altNames: Array<{
@@ -182,12 +180,12 @@ export const getCertValidPeriod = (cert: pki.Certificate): string => {
  * 获取证书的名称
  */
 export const getCertCommonName = (cert: pki.Certificate): string => {
-  const cn = cert.subject.getField({ name: 'commonName' });
+  const cn: pki.Attribute = cert.subject.getField({ name: 'commonName' });
   if (!cn) {
     throw new Error('Failed reading commonName of cert');
   }
 
-  return cn;
+  return cn.value;
 };
 
 export const isCertSignedByCA = (
