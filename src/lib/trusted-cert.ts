@@ -7,7 +7,6 @@ import { addToKeyChain, getKeyChainCertSha1List } from '../platform';
 import applicationConfigPath from './application-config-path';
 import { I18nDict } from '../i18n/interface';
 import { mergeI18n } from '../i18n';
-import inquirer from 'inquirer';
 import { getAdded, isMatched } from './util';
 
 const debug = Debug('trusted-cert:class');
@@ -210,31 +209,6 @@ export class TrustedCert {
   private async printNoInstall() {
     console.warn(this.i18n.host_add_no_install);
     console.warn(this.i18n.host_add_no_install_operation_tip);
-  }
-
-  /**
-   * cli交互方式获取支持的域名
-   */
-  private async getInquirerAnswer(): Promise<string[]> {
-    const defaultHosts = ['localhost', '127.0.0.1'];
-    const { hosts } = await inquirer.prompt<{ hosts: string }>([
-      {
-        type: 'input',
-        name: 'hosts',
-        message: this.i18n.install_inquirer_domains_with_default,
-        default: defaultHosts.join(','),
-      },
-    ]);
-
-    if (hosts === '') {
-      return defaultHosts;
-    } else {
-      const hostList = hosts
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean);
-      return Array.from(new Set(hostList));
-    }
   }
 
   private generateKeyPair() {
