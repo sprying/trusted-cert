@@ -329,6 +329,6 @@ export class TrustedCert {
 
   private log(message: string) {
     if (this.quiet) return;
-    this.log(message);
+    console.log(message);
   }
 }
