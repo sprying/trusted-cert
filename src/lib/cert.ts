@@ -173,6 +173,18 @@ export const getCertSha1 = (cert: pki.Certificate): string => {
 /**
  * 获取证书的有效时间
  */
-export const getCertValidPeriod = (cert: pki.Certificate): string => {
+ export const getCertValidPeriod = (cert: pki.Certificate): string => {
   return `${cert.validity.notBefore} ~ ${cert.validity.notAfter}`;
+};
+
+/**
+ * 获取证书的名称
+ */
+ export const getCertCommonName = (cert: pki.Certificate): string => {
+  const cn = cert.subject.getField({ name: 'commonName' });
+  if (!cn) {
+    throw new Error('Failed reading commonName of cert');
+  }
+
+  return cn;
 };
