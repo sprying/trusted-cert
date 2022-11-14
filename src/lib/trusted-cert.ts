@@ -9,6 +9,7 @@ import {
   getCertHosts,
   getCertSha1,
   getCertValidPeriod,
+  isCertSignedByCA,
 } from './cert';
 import Debug from 'debug';
 import {
@@ -148,8 +149,13 @@ export class TrustedCert {
     let ssl = this.loadSSL();
     let signHosts = [...hosts];
     if (!overwrite && ssl) {
+      const signedByCA = isCertSignedByCA(ssl.cert, ca.cert);
+      if (!signedByCA) {
+        console.log('当前证书不由本地的 CA 签署，需要重新签署证书');
+      }
+
       const currentHosts = getCertHosts(ssl.cert);
-      if (isMatched(currentHosts, hosts)) {
+      if (signedByCA && isMatched(currentHosts, hosts)) {
         console.log('现有证书已经满足需求');
         return;
       }
@@ -337,8 +343,8 @@ export class TrustedCert {
 
     const list = getKeyChainCertSha1List(cn);
     const sha1 = getCertSha1(cert);
-    debug(`已经添加信任的证书sha1${list.join(',')}`);
-    debug(`证书文件的sha1${sha1}`);
+    debug(`已经添加信任的证书sha1 ${list.join(',')}`);
+    debug(`证书文件的sha1 ${sha1}`);
 
     return list.includes(sha1);
   }

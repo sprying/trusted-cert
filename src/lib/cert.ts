@@ -189,3 +189,10 @@ export const getCertCommonName = (cert: pki.Certificate): string => {
 
   return cn;
 };
+
+export const isCertSignedByCA = (
+  cert: pki.Certificate,
+  ca: pki.Certificate
+) => {
+  return ca.verify(cert);
+};
