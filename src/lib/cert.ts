@@ -1,4 +1,4 @@
-import { md, pki } from 'node-forge';
+import { asn1, md, pki } from 'node-forge';
 import isIp from 'is-ip';
 
 export const generateKeyPair = (
@@ -163,11 +163,8 @@ export const getCertHosts = (cert: pki.Certificate): string[] => {
  * 获取缓存的证书文件里的sha1值
  */
 export const getCertSha1 = (cert: pki.Certificate): string => {
-  return pki.getPublicKeyFingerprint(cert.publicKey, {
-    type: 'SubjectPublicKeyInfo',
-    encoding: 'hex',
-    delimiter: ':',
-  });
+  const bytes = asn1.toDer(pki.certificateToAsn1(cert)).getBytes()
+  return md.sha1.create().update(bytes).digest().toHex().toUpperCase();
 };
 
 /**
