@@ -139,7 +139,9 @@ export function createCert({
  * 获取证书里支持的域名
  */
 export const getCertHosts = (cert: pki.Certificate): string[] => {
-  const result: string[] = [];
+  const result: string[] = [
+    getCertCommonName(cert)
+  ];
   const subjectAltName = cert.getExtension('subjectAltName') as
     | {
         altNames: Array<{
@@ -149,7 +151,7 @@ export const getCertHosts = (cert: pki.Certificate): string[] => {
         }>;
       }
     | undefined;
-  if (subjectAltName !== undefined) {
+  if (subjectAltName?.altNames) {
     subjectAltName.altNames.forEach((host) => {
       if (host.type === 2) {
         result.push(host.value);
