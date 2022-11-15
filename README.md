@@ -18,7 +18,7 @@ HTTPS自签名证书工具，自动生成自签名证书并添加到系统钥匙
 	b. 一键生成自签名证书并添加到macOS钥匙串
 
 	```bash
-	trusted-cert install
+	trusted-cert install test.example.com
 	```
 
 2. 在nodejs中使用生成的密钥和证书（更多方式参考最后的【附配置服务的HTTPS证书示例】）
@@ -44,29 +44,22 @@ HTTPS自签名证书工具，自动生成自签名证书并添加到系统钥匙
 ### 命令行功能介绍
 
 ```bash
-trusted-cert --help
-```
-
-```
-Usage: trusted-cert [global options] command
+$ trusted-cert --help
+Usage: trusted-cert [global option] | [command]
 
 Options:
-  -v, --version   当前版本
-  -h, --help      display help for command
+  -v, --version      当前版本
+  -h, --help         display help for command
 
 Commands:
-  install         生成ssl密钥和自签名证书，在系统钥匙串里添加和信任自签名证书
-  info            查看自签名信息
-  trust           信任自签名证书
-  add <host>      添加要支持的域名，支持以,分隔
-  uninstall       删除生成的ssl密钥和自签名证书
-  help [command]  display help for command
-
-先安装，再使用其它命令
-  $ trusted-cert install
+  install <host...>  生成密钥和自签名证书，并添加至系统钥匙串。多个 host 以空格分隔
+  info               查看自签名信息
+  trust              信任自签名证书
+  uninstall          删除生成的ssl密钥和自签名证书
+  help [command]     display help for command
 ```
 
-### `trusted-cert install`
+### `trusted-cert install <host...>`
 一键生成自签名证书并添加到macOS钥匙串，在这个过程中，需要输入本地启动https服务要支持的域名，多个以`,`分隔，然后会提示要输入密码，用来将自签名证书以sudo权限添加到系统钥匙串里，如果添加失败，后面浏览器访问https服务，会提示不安全。
 
 ### `trusted-cert trust`
@@ -75,11 +68,8 @@ Commands:
 ### `trusted-cert info`
 生成证书后，可以随时通过这个命令查看密钥等文件的位置，方便你在配置服务器https时需要它，还可以看到支持的域名，是否已经添加到系统钥匙串，证书的有效时间。
 
-### `trusted-cert add <host>`
-通过这个命令新增本地https服务要用的域名，新增时先检测证书是否已经支持了该域名，比如证书支持*.m.taobao.com，本地要使用test.m.taobao.com域名，检测发现已经支持了，会提醒不用新增。如果遇到需要新增的，会先删除原有的密钥等文件和钥匙串里证书，然后再新增。
-
 ### `trusted-cert uninstall`
-删除本地存放密钥、证书等文件的目录，删除钥匙串里添加的证书
+删除本地已生成的密钥和证书
 
 
 ## 方式二“供他方命令行调用的api”
@@ -97,7 +87,7 @@ Commands:
 	const https = require('https')
 	const fs = require('fs')
 	const { certificateFor } = require('trusted-cert')
-	const hosts = ['test.m.taobao.com', '192.168.0.1'] // 本地https服务要使用的domain/ip
+	const hosts = ['test.example.com', '192.168.0.1'] // 本地https服务要使用的domain/ip
 	certificateFor(hosts).then((keyAndCert) => {
 		https.createServer(keyAndCert, (req, res) => {
 		  res.writeHead(200);
@@ -133,7 +123,7 @@ Commands:
 # ...
 server {
   listen  443;
-  server_name shop.alimama.com;
+  server_name test.example.com;
  
  ssl on;
   ssl_certificate     /Users/xxx/.trusted-cert/ssl.crt;
@@ -145,7 +135,6 @@ server {
 }
 # ...
 ```
-
 
 ## nodejs
 ```javascript
