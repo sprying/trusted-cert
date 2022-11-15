@@ -204,3 +204,15 @@ export const isCertSignedByCA = (
 ) => {
   return ca.verify(cert);
 };
+
+/**
+ * 验证证书是否在有效期内
+ */
+export const isCertValid = (cert: pki.Certificate) => {
+  const now = new Date();
+  if (now < cert.validity.notBefore || now > cert.validity.notAfter) {
+    return false;
+  }
+
+  return true;
+};

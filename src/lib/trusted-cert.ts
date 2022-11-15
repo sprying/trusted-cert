@@ -10,6 +10,7 @@ import {
   getCertSha1,
   getCertValidPeriod,
   isCertSignedByCA,
+  isCertValid,
 } from './cert';
 import Debug from 'debug';
 import {
@@ -149,13 +150,19 @@ export class TrustedCert {
     let ssl = this.loadSSL();
     let signHosts = [...hosts];
     if (!overwrite && ssl) {
-      const signedByCA = isCertSignedByCA(ssl.cert, ca.cert);
-      if (!signedByCA) {
+      let valid = true;
+      if (!isCertSignedByCA(ssl.cert, ca.cert)) {
         this.log(this.l('sign_ca_mismatch'));
+        valid = false;
+      }
+
+      if (!isCertValid(ssl.cert)) {
+        this.log(this.l('sign_cert_expired'));
+        valid = false;
       }
 
       const currentHosts = getCertHosts(ssl.cert);
-      if (signedByCA && isMatched(currentHosts, hosts)) {
+      if (valid && isMatched(currentHosts, hosts)) {
         this.log(this.l('sign_cert_satisfied'));
         return {
           key: pki.privateKeyToPem(ssl.key),
@@ -313,6 +320,10 @@ export class TrustedCert {
   }
 
   private isCertTrusted(cert: pki.Certificate) {
+    if (!isCertValid(cert)) {
+      return false;
+    }
+
     const cn = getCertCommonName(cert);
 
     const list = getKeyChainCertSha1List(cn);
