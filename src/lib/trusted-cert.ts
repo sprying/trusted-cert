@@ -178,6 +178,10 @@ export class TrustedCert {
       signHosts = [...currentHosts, ...addHosts];
     }
 
+    if (signHosts.length === 0) {
+      throw new Error(this.l('sign_host_empty'));
+    }
+
     let privateKey = ssl?.key;
     let publicKey: pki.PublicKey;
     if (privateKey) {

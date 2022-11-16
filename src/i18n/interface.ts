@@ -21,6 +21,7 @@ export interface I18nDict {
   sign_cert_satisfied: string;
   sign_complete: string;
   sign_cert_expired: string;
+  sign_host_empty: string;
 
   uninstall_del_keychain: string;
   uninstall_del_keychain_success: string;

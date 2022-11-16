@@ -118,9 +118,7 @@ export function createCert({
 
   const types = { domain: 2, ip: 7 }; // available Types: https://git.io/fptng
   const altNames: any[] = [];
-  hosts.forEach((host, i) => {
-    if (i === domainIndex) return;
-
+  hosts.forEach((host) => {
     if (isIp(host)) {
       altNames.push({ type: types.ip, ip: host });
     } else {
@@ -128,12 +126,10 @@ export function createCert({
     }
   });
 
-  if (altNames.length) {
-    extensions.push({
-      name: 'subjectAltName',
-      altNames,
-    });
-  }
+  extensions.push({
+    name: 'subjectAltName',
+    altNames,
+  });
 
   return signCert({
     caPrivKey,
@@ -149,7 +145,9 @@ export function createCert({
  * 获取证书里支持的域名
  */
 export const getCertHosts = (cert: pki.Certificate): string[] => {
-  const result: string[] = [getCertCommonName(cert)];
+  const result = new Set<string>();
+  result.add(getCertCommonName(cert));
+
   const subjectAltName = cert.getExtension('subjectAltName') as
     | {
         altNames: Array<{
@@ -162,13 +160,13 @@ export const getCertHosts = (cert: pki.Certificate): string[] => {
   if (subjectAltName?.altNames) {
     subjectAltName.altNames.forEach((host) => {
       if (host.type === 2) {
-        result.push(host.value);
+        result.add(host.value);
       } else if (host.type === 7) {
-        result.push(host.ip);
+        result.add(host.ip);
       }
     });
   }
-  return result;
+  return Array.from(result);
 };
 
 /**

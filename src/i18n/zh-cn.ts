@@ -25,6 +25,7 @@ export const zhCN: I18nDict = {
   sign_cert_satisfied: '现有证书已经满足需求',
   sign_complete: '证书签发完成',
   sign_cert_expired: '现有证书已过期，需要重新签署证书',
+  sign_host_empty: '主机名列表为空，无法签发证书',
 
   uninstall_del_keychain: '正在删除钥匙串里名称「%s」的证书',
   uninstall_del_keychain_success: '删除成功',
