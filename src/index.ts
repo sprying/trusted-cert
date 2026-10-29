@@ -3,8 +3,11 @@ import { TrustedCert } from './lib/trusted-cert';
 
 export { TrustedCert };
 
-export async function certificateFor(hosts: string[]) {
-  return new TrustedCert().install({ hosts });
+export async function certificateFor(
+  hosts: string[],
+  { silent = false }: { silent?: boolean } = {}
+) {
+  return new TrustedCert({ quiet: silent }).install({ hosts });
 }
 
 export async function install(hosts: string[]) {
