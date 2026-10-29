@@ -1,4 +1,11 @@
-import { ensureDirSync, readFileSync, rm, writeFileSync } from 'fs-extra';
+import {
+  chmodSync,
+  ensureDirSync,
+  readFileSync,
+  rm,
+  statSync,
+  writeFileSync,
+} from 'fs-extra';
 import { pki } from 'node-forge';
 import { join } from 'path';
 import {
@@ -33,8 +40,26 @@ const readCert = (dir: string, name: string) => {
   return pki.certificateFromPem(readFileSync(certPath(dir, name), 'utf-8'));
 };
 
+// 私钥只允许当前用户读写：CA 已被系统信任，其私钥若被本机其他用户读到，就能签发任意域名的可信证书
+const KEY_FILE_MODE = 0o600;
+
+const restrictKeyFile = (file: string) => {
+  if (process.platform === 'win32') return;
+  try {
+    if ((statSync(file).mode & 0o777) !== KEY_FILE_MODE) {
+      chmodSync(file, KEY_FILE_MODE);
+    }
+  } catch (e) {
+    debug('修改私钥文件%o权限失败 %o', file, e);
+  }
+};
+
 const readKey = (dir: string, name: string) => {
-  return pki.privateKeyFromPem(readFileSync(keyPath(dir, name), 'utf-8'));
+  const file = keyPath(dir, name);
+  const pem = readFileSync(file, 'utf-8');
+  // 旧版本写出的私钥是 0644，读取时顺带收紧
+  restrictKeyFile(file);
+  return pki.privateKeyFromPem(pem);
 };
 
 const writeCert = (dir: string, name: string, content: pki.Certificate) => {
@@ -42,7 +67,10 @@ const writeCert = (dir: string, name: string, content: pki.Certificate) => {
 };
 
 const writeKey = (dir: string, name: string, content: pki.PrivateKey) => {
-  writeFileSync(keyPath(dir, name), pki.privateKeyToPem(content));
+  const file = keyPath(dir, name);
+  writeFileSync(file, pki.privateKeyToPem(content), { mode: KEY_FILE_MODE });
+  // mode 只在新建文件时生效，覆盖已有文件时需再 chmod
+  restrictKeyFile(file);
 };
 
 const rmAll = (files: string[]) =>
